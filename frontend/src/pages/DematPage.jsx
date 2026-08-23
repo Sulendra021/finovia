@@ -1,13 +1,12 @@
 import React from "react";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, ShieldCheck, Zap } from "lucide-react";
 import { PageShell, PageHero, RatingStars } from "../components/shared.jsx";
 import Seo from "../components/Seo.jsx";
 import { useLiveData } from "../hooks/useLiveData.js";
 import { dematAccountsApi } from "../services/api.js";
-import { DEMAT_ACCOUNTS } from "../data/mockData.js";
 
 export default function DematPage() {
-  const { data: brokers } = useLiveData(dematAccountsApi.getAll, DEMAT_ACCOUNTS);
+  const { data: brokers } = useLiveData(dematAccountsApi.getAll, []);
   return (
     <PageShell>
       <Seo title="Demat Accounts" description="Compare brokerage, AMC and features across India's top discount and full-service stock brokers." />

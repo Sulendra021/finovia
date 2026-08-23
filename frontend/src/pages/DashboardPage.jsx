@@ -16,24 +16,21 @@ const STATUS_STYLE = {
 export default function DashboardPage() {
   const { user } = useAuth();
   const [applications, setApplications] = useState([]);
-  const [wishlist, setWishlist] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    Promise.all([applicationsApi.mine(), wishlistApi.mine()])
-      .then(([apps, wl]) => {
-        setApplications(apps);
-        setWishlist(wl);
-      })
+    applicationsApi
+      .mine()
+      .then((apps) => setApplications(apps))
       .catch(() => setError("Couldn't reach the backend. Is it running?"))
       .finally(() => setLoading(false));
   }, []);
 
   return (
     <PageShell>
-      <Seo title="My Dashboard" description="Track your applications and saved products on Finovia." />
-      <PageHero eyebrow="Dashboard" title={`Welcome back, ${user?.name?.split(" ")[0] || "there"}`} subtitle="Track the products you've applied for and the ones you're still considering." />
+      <Seo title="My Dashboard" description="Track your applications on Finovia." />
+      <PageHero eyebrow="Dashboard" title={`Welcome back, ${user?.name?.split(" ")[0] || "there"}`} subtitle="Track the products you've applied for." />
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 space-y-10">
         {loading ? (
           <div className="flex items-center justify-center py-20">
@@ -42,59 +39,46 @@ export default function DashboardPage() {
         ) : error ? (
           <div className="text-sm text-rose-700 bg-rose-50 dark:bg-rose-950 dark:text-rose-400 border border-rose-200 dark:border-rose-900 rounded-xl px-4 py-3">{error}</div>
         ) : (
-          <>
-            <section>
-              <div className="flex items-center gap-2 mb-4">
-                <FileText className="w-5 h-5 text-blue-600" />
-                <h2 className="fin-display text-lg font-bold text-slate-900 dark:text-white">My Applications</h2>
+          <section>
+            <div className="flex items-center gap-2 mb-4">
+              <FileText className="w-5 h-5 text-blue-600" />
+              <h2 className="fin-display text-lg font-bold text-slate-900 dark:text-white">My Applications</h2>
+            </div>
+            {applications.length === 0 ? (
+              <div className="bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-8 text-center">
+                <p className="text-sm text-slate-500 dark:text-slate-400">You haven't submitted any application leads yet.</p>
+                <Link to="/cards" className="fin-focus inline-flex items-center gap-1 text-sm font-semibold text-blue-600 mt-3">
+                  Browse credit cards <ArrowRight className="w-4 h-4" />
+                </Link>
               </div>
-              {applications.length === 0 ? (
-                <div className="bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-8 text-center">
-                  <p className="text-sm text-slate-500 dark:text-slate-400">You haven't applied to anything yet.</p>
-                  <Link to="/cards" className="fin-focus inline-flex items-center gap-1 text-sm font-semibold text-blue-600 mt-3">
-                    Browse credit cards <ArrowRight className="w-4 h-4" />
-                  </Link>
-                </div>
-              ) : (
-                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800">
-                  {applications.map((a) => (
-                    <div key={a._id} className="flex items-center justify-between px-5 py-4">
-                      <div>
-                        <p className="fin-display font-semibold text-sm text-slate-900 dark:text-white">{a.productType}</p>
-                        <p className="flex items-center gap-1 text-[11px] text-slate-400 dark:text-slate-500 mt-0.5">
-                          <Clock className="w-3 h-3" /> {new Date(a.createdAt).toLocaleDateString()}
-                        </p>
+            ) : (
+              <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800 overflow-hidden shadow-sm">
+                {applications.map((a) => (
+                  <div key={a._id || a.id} className="flex flex-col sm:flex-row sm:items-center justify-between p-5 gap-3 hover:bg-slate-50/50 dark:hover:bg-slate-800/40 transition-colors">
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950 text-blue-600 dark:text-blue-400 text-[11px] font-bold">
+                          {a.productType}
+                        </span>
+                        <span className="text-xs font-semibold text-slate-500 dark:text-slate-400">
+                          Applicant: {a.applicantName || user?.name}
+                        </span>
                       </div>
-                      <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full capitalize ${STATUS_STYLE[a.status] || STATUS_STYLE.pending}`}>
-                        {a.status}
+                      <p className="flex items-center gap-1.5 text-xs text-slate-400 dark:text-slate-500">
+                        <Clock className="w-3.5 h-3.5" /> Submitted on {new Date(a.createdAt).toLocaleString("en-IN")}
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <span className={`text-xs font-bold px-3 py-1 rounded-full capitalize ${STATUS_STYLE[a.status] || STATUS_STYLE.pending}`}>
+                        {a.status || "Redirected"}
                       </span>
                     </div>
-                  ))}
-                </div>
-              )}
-            </section>
-
-            <section>
-              <div className="flex items-center gap-2 mb-4">
-                <Heart className="w-5 h-5 text-rose-500" />
-                <h2 className="fin-display text-lg font-bold text-slate-900 dark:text-white">Wishlist</h2>
+                  </div>
+                ))}
               </div>
-              {wishlist.length === 0 ? (
-                <div className="bg-white dark:bg-slate-900 border border-dashed border-slate-300 dark:border-slate-700 rounded-2xl p-8 text-center">
-                  <p className="text-sm text-slate-500 dark:text-slate-400">Nothing saved yet — tap the heart on any product to save it here.</p>
-                </div>
-              ) : (
-                <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 divide-y divide-slate-100 dark:divide-slate-800">
-                  {wishlist.map((w) => (
-                    <div key={w._id} className="flex items-center justify-between px-5 py-4">
-                      <p className="text-sm text-slate-700 dark:text-slate-200">{w.productType}</p>
-                      <span className="fin-num text-[11px] text-slate-400 dark:text-slate-500">{w.productId}</span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </section>
-          </>
+            )}
+          </section>
         )}
       </div>
     </PageShell>

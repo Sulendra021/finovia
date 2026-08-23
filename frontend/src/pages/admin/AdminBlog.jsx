@@ -1,11 +1,12 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import ResourceTable from "../../components/admin/ResourceTable.jsx";
 import { adminResourceApi } from "../../services/api.js";
 
 const columns = [
   { key: "title", label: "Title" }, { key: "category", label: "Category" }, { key: "readTime", label: "Read time" },
 ];
-const formFields = [
+export const blogFormFields = [
   { name: "title", label: "Title", required: true },
   { name: "category", label: "Category", required: true, placeholder: "e.g. Credit Cards" },
   { name: "excerpt", label: "Excerpt", type: "textarea", required: true },
@@ -15,5 +16,22 @@ const formFields = [
 ];
 
 export default function AdminBlog() {
-  return <ResourceTable title="Blog & News" api={adminResourceApi.blog} columns={columns} formFields={formFields} emptyLabel="posts" />;
+  const navigate = useNavigate();
+
+  return (
+    <ResourceTable
+      title="Blog & News"
+      modelName="BlogPost"
+      api={adminResourceApi.blog}
+      columns={columns}
+      formFields={blogFormFields}
+      emptyLabel="posts"
+      onEdit={(post) => {
+        const id = post._id || post.id;
+        navigate(`/admin/blog/${id}/edit`);
+      }}
+      onBulkNavigate={() => navigate("/admin/bulk-json-pipeline?model=BlogPost")}
+    />
+  );
 }
+

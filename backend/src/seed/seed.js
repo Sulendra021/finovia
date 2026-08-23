@@ -1,50 +1,55 @@
 // Run with: npm run seed        (populate)
 //           npm run seed:destroy (wipe product collections)
 require("dotenv").config({ path: require("path").join(__dirname, "../../.env"), override: true });
-const mongoose = require("mongoose");
-const connectDB = require("../config/db");
-
-const CreditCard = require("../models/CreditCard");
-const BankAccount = require("../models/BankAccount");
-const DematAccount = require("../models/DematAccount");
-const Loan = require("../models/Loan");
-const Insurance = require("../models/Insurance");
-const Offer = require("../models/Offer");
-const BlogPost = require("../models/BlogPost");
-const User = require("../models/User");
+const bcrypt = require("bcryptjs");
+const prisma = require("../config/prisma");
 
 const { creditCards, bankAccounts, dematAccounts, loans, insurance, offers, blogPosts } = require("./seedData");
 
 async function importData() {
   try {
-    await connectDB();
-    await Promise.all([
-      CreditCard.deleteMany(),
-      BankAccount.deleteMany(),
-      DematAccount.deleteMany(),
-      Loan.deleteMany(),
-      Insurance.deleteMany(),
-      Offer.deleteMany(),
-      BlogPost.deleteMany(),
+    await prisma.$transaction([
+      prisma.creditCard.deleteMany(),
+      prisma.bankAccount.deleteMany(),
+      prisma.dematAccount.deleteMany(),
+      prisma.loan.deleteMany(),
+      prisma.insurance.deleteMany(),
+      prisma.offer.deleteMany(),
+      prisma.blogPost.deleteMany(),
     ]);
 
-    await CreditCard.insertMany(creditCards);
-    await BankAccount.insertMany(bankAccounts);
-    await DematAccount.insertMany(dematAccounts);
-    await Loan.insertMany(loans);
-    await Insurance.insertMany(insurance);
-    await Offer.insertMany(offers);
-    await BlogPost.insertMany(blogPosts);
+    await prisma.creditCard.createMany({ data: creditCards });
+    await prisma.bankAccount.createMany({
+      data: bankAccounts.map((b) => ({
+        ...b,
+        type: b.type === "Zero Balance" ? "Zero_Balance" : b.type,
+      })),
+    });
+
+    await prisma.dematAccount.createMany({ data: dematAccounts });
+    await prisma.loan.createMany({ data: loans });
+    await prisma.insurance.createMany({ data: insurance });
+    await prisma.offer.createMany({ data: offers });
+    await prisma.blogPost.createMany({ data: blogPosts });
 
     const adminEmail = "admin@finovia.in";
-    const existingAdmin = await User.findOne({ email: adminEmail });
+    const existingAdmin = await prisma.user.findUnique({ where: { email: adminEmail } });
     if (!existingAdmin) {
-      await User.create({ name: "Finovia Admin", email: adminEmail, password: "admin123", role: "admin" });
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash("admin123", salt);
+      await prisma.user.create({
+        data: {
+          name: "Finovia Admin",
+          email: adminEmail,
+          password: hashedPassword,
+          role: "admin",
+        },
+      });
       console.log(`Admin account created -> email: ${adminEmail}  password: admin123`);
     }
 
     console.log("Finovia data seeded successfully");
-    process.exit();
+    process.exit(0);
   } catch (err) {
     console.error("Seed error:", err);
     process.exit(1);
@@ -53,18 +58,17 @@ async function importData() {
 
 async function destroyData() {
   try {
-    await connectDB();
-    await Promise.all([
-      CreditCard.deleteMany(),
-      BankAccount.deleteMany(),
-      DematAccount.deleteMany(),
-      Loan.deleteMany(),
-      Insurance.deleteMany(),
-      Offer.deleteMany(),
-      BlogPost.deleteMany(),
+    await prisma.$transaction([
+      prisma.creditCard.deleteMany(),
+      prisma.bankAccount.deleteMany(),
+      prisma.dematAccount.deleteMany(),
+      prisma.loan.deleteMany(),
+      prisma.insurance.deleteMany(),
+      prisma.offer.deleteMany(),
+      prisma.blogPost.deleteMany(),
     ]);
     console.log("Finovia product data destroyed");
-    process.exit();
+    process.exit(0);
   } catch (err) {
     console.error("Destroy error:", err);
     process.exit(1);

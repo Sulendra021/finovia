@@ -3,23 +3,60 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 const ThemeContext = createContext(null);
 
 export function ThemeProvider({ children }) {
-  const [theme, setTheme] = useState(() => {
+  const [mode, setMode] = useState(() => {
+    if (typeof window === "undefined") return "system";
+    return localStorage.getItem("finovia_mode") || "system";
+  });
+
+  const [resolvedTheme, setResolvedTheme] = useState(() => {
     if (typeof window === "undefined") return "light";
-    const saved = localStorage.getItem("finovia_theme");
-    if (saved) return saved;
+    const saved = localStorage.getItem("finovia_mode");
+    if (saved === "dark") return "dark";
+    if (saved === "light") return "light";
     return window.matchMedia?.("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   });
 
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === "dark") root.classList.add("dark");
-    else root.classList.remove("dark");
-    localStorage.setItem("finovia_theme", theme);
-  }, [theme]);
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
 
-  const toggleTheme = () => setTheme((t) => (t === "dark" ? "light" : "dark"));
+    const updateTheme = () => {
+      let active = mode;
+      if (mode === "system") {
+        active = mediaQuery.matches ? "dark" : "light";
+      }
+      setResolvedTheme(active);
 
-  return <ThemeContext.Provider value={{ theme, toggleTheme }}>{children}</ThemeContext.Provider>;
+      if (active === "dark") {
+        root.classList.add("dark");
+      } else {
+        root.classList.remove("dark");
+      }
+    };
+
+    updateTheme();
+    localStorage.setItem("finovia_mode", mode);
+
+    const handleChange = () => {
+      if (mode === "system") updateTheme();
+    };
+
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, [mode]);
+
+  const toggleTheme = () => {
+    setMode((m) => {
+      const active = m === "system" ? resolvedTheme : m;
+      return active === "dark" ? "light" : "dark";
+    });
+  };
+
+  return (
+    <ThemeContext.Provider value={{ mode, setMode, theme: resolvedTheme, toggleTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
 }
 
 export function useTheme() {

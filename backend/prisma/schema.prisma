@@ -1,0 +1,239 @@
+// prisma/schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  user
+  admin
+}
+
+enum ApplicationStatus {
+  pending
+  redirected
+  approved
+  rejected
+}
+
+enum ProductType {
+  CreditCard
+  BankAccount
+  DematAccount
+  Loan
+  Insurance
+}
+
+enum CardCategory {
+  Cashback
+  Travel
+  Rewards
+  Premium
+}
+
+enum AccountType {
+  Savings
+  Current
+  Salary
+  Zero_Balance @map("Zero Balance")
+}
+
+model User {
+  id           String        @id @default(uuid())
+  name         String
+  email        String        @unique
+  password     String
+  role         Role          @default(user)
+  isVerified         Boolean       @default(false)
+  metadata           Json?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  wishlist           WishlistItem[]
+  applications       Application[]
+  passwordResetTokens PasswordResetToken[]
+
+  @@map("users")
+}
+
+model OtpCode {
+  id        String   @id @default(uuid())
+  email     String
+  code      String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@map("otp_codes")
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+model WishlistItem {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  productType String
+  productId   String
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, productType, productId])
+  @@index([userId])
+  @@map("wishlist_items")
+}
+
+model CreditCard {
+  id          String       @id @default(uuid())
+  name        String
+  bank        String
+  category    CardCategory
+  joiningFee  String       @default("Free")
+  annualFee   String       @default("Free")
+  rewardRate  String?
+  cashback    String?
+  rating      Float        @default(4.5)
+  tags        String[]
+  gradient    String       @default("from-blue-700 via-blue-600 to-blue-800")
+  active      Boolean      @default(true)
+  description String?
+  applyUrl    String?
+  buttonText  String?
+  imageUrl    String?
+  imageAlt    String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([active, category])
+  @@index([bank])
+  @@map("credit_cards")
+}
+
+model BankAccount {
+  id         String      @id @default(uuid())
+  name       String
+  bank       String
+  type       AccountType
+  interest   String      @default("0.00")
+  minBalance String      @default("0")
+  features   String[]
+  active     Boolean     @default(true)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+
+  @@index([active, type])
+  @@index([bank])
+  @@map("bank_accounts")
+}
+
+model DematAccount {
+  id        String   @id @default(uuid())
+  name      String
+  brokerage String
+  amc       String   @default("0")
+  opening   String   @default("Free")
+  rating    Float    @default(4.5)
+  features  String[]
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([active])
+  @@map("demat_accounts")
+}
+
+model Loan {
+  id            String   @id @default(uuid())
+  name          String
+  rate          String
+  amount        String
+  tenure        String
+  processingFee String?
+  desc          String?
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([active])
+  @@map("loans")
+}
+
+model Insurance {
+  id         String   @id @default(uuid())
+  name       String
+  provider   String
+  premium    String
+  coverage   String?
+  claimRatio String?
+  active     Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([active])
+  @@map("insurance")
+}
+
+model Offer {
+  id        String   @id @default(uuid())
+  title     String
+  bank      String
+  category  String
+  expiry    String
+  color     String   @default("blue")
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([active, category])
+  @@map("offers")
+}
+
+model BlogPost {
+  id        String   @id @default(uuid())
+  title     String
+  category  String
+  excerpt   String
+  content   String   @default("")
+  readTime  String   @default("5 min read")
+  author    String   @default("Finovia Team")
+  published Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([published, createdAt])
+  @@map("blog_posts")
+}
+
+model Application {
+  id               String            @id @default(uuid())
+  userId           String?
+  user             User?             @relation(fields: [userId], references: [id], onDelete: SetNull)
+  productType      ProductType
+  productId        String
+  applicantName    String
+  applicantEmail   String
+  applicantPhone   String
+  status           ApplicationStatus @default(pending)
+  commissionEarned Float             @default(0)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([userId])
+  @@index([status])
+  @@index([createdAt])
+  @@map("applications")
+}

@@ -56,7 +56,7 @@ src/
 
 Every product page uses `hooks/useLiveData.js`, which tries the matching
 `services/api.js` function first and quietly falls back to `data/mockData.js`
-if the backend isn't reachable — so the UI always renders, with or without
+if the backend isn't reachable - so the UI always renders, with or without
 the API running.
 
 `AuthPage.jsx` and the Admin Panel are fully wired to the live backend

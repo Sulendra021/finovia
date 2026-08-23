@@ -1,30 +1,34 @@
-const User = require("../models/User");
-const CreditCard = require("../models/CreditCard");
-const BankAccount = require("../models/BankAccount");
-const DematAccount = require("../models/DematAccount");
-const Loan = require("../models/Loan");
-const Insurance = require("../models/Insurance");
-const Offer = require("../models/Offer");
-const BlogPost = require("../models/BlogPost");
-const Application = require("../models/Application");
+const prisma = require("../config/prisma");
 
 // GET /api/admin/stats - aggregated counts for the admin dashboard
 async function getDashboardStats(req, res, next) {
   try {
     const [
-      userCount, cardCount, bankCount, dematCount, loanCount,
-      insuranceCount, offerCount, blogCount, leadCount, commissionAgg,
+      userCount,
+      cardCount,
+      bankCount,
+      dematCount,
+      loanCount,
+      insuranceCount,
+      offerCount,
+      blogCount,
+      leadCount,
+      commissionAgg,
     ] = await Promise.all([
-      User.countDocuments(),
-      CreditCard.countDocuments(),
-      BankAccount.countDocuments(),
-      DematAccount.countDocuments(),
-      Loan.countDocuments(),
-      Insurance.countDocuments(),
-      Offer.countDocuments(),
-      BlogPost.countDocuments(),
-      Application.countDocuments(),
-      Application.aggregate([{ $group: { _id: null, total: { $sum: "$commissionEarned" } } }]),
+      prisma.user.count(),
+      prisma.creditCard.count(),
+      prisma.bankAccount.count(),
+      prisma.dematAccount.count(),
+      prisma.loan.count(),
+      prisma.insurance.count(),
+      prisma.offer.count(),
+      prisma.blogPost.count(),
+      prisma.application.count(),
+      prisma.application.aggregate({
+        _sum: {
+          commissionEarned: true,
+        },
+      }),
     ]);
 
     res.json({
@@ -39,7 +43,7 @@ async function getDashboardStats(req, res, next) {
         blogPosts: blogCount,
       },
       leads: leadCount,
-      totalCommission: commissionAgg[0]?.total || 0,
+      totalCommission: commissionAgg._sum.commissionEarned || 0,
     });
   } catch (err) {
     next(err);

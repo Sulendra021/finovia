@@ -1,4 +1,11 @@
 User-agent: *
 Allow: /
 
+# Block private user & administrative portal routes from indexing
+Disallow: /dashboard
+Disallow: /auth
+Disallow: /admin
+Disallow: /admin/*
+
+# Sitemap index location
 Sitemap: https://www.finovia.in/sitemap.xml

@@ -1,15 +1,38 @@
-// Generic CRUD controller factory - each product type (CreditCard, BankAccount,
-// DematAccount, Loan, Insurance, Offer, BlogPost) shares the same list/read/
-// create/update/delete shape, so we build it once and reuse it per model.
-function createCRUDController(Model) {
+const prisma = require("../config/prisma");
+
+// Generic CRUD controller factory using Prisma for product/content models
+function createCRUDController(modelName, options = {}) {
+  const delegate = prisma[modelName];
+  const activeFilterKey = options.activeFilterKey || "active";
+  const isPublishedField = options.isPublishedField || false;
+
   return {
-    // GET /api/<resource>  - list all active records, newest first
+    // GET /api/<resource> - list all active records, newest first
     getAll: async (req, res, next) => {
       try {
-        const filter = { active: { $ne: false } };
-        if (req.query.category) filter.category = req.query.category;
-        const items = await Model.find(filter).sort({ createdAt: -1 });
-        res.json(items);
+        const where = {};
+        if (isPublishedField) {
+          where.published = true;
+        } else {
+          where[activeFilterKey] = true;
+        }
+
+        if (req.query.category) {
+          where.category = req.query.category;
+        }
+
+        const items = await delegate.findMany({
+          where,
+          orderBy: { createdAt: "desc" },
+        });
+
+        // Format _id virtual to preserve API contract for frontend
+        const formattedItems = items.map((item) => ({
+          ...item,
+          _id: item.id,
+        }));
+
+        res.json(formattedItems);
       } catch (err) {
         next(err);
       }
@@ -18,45 +41,64 @@ function createCRUDController(Model) {
     // GET /api/<resource>/:id
     getOne: async (req, res, next) => {
       try {
-        const item = await Model.findById(req.params.id);
-        if (!item) return res.status(404).json({ message: "Not found" });
-        res.json(item);
-      } catch (err) {
-        next(err);
-      }
-    },
-
-    // POST /api/<resource>  - admin only
-    create: async (req, res, next) => {
-      try {
-        const item = await Model.create(req.body);
-        res.status(201).json(item);
-      } catch (err) {
-        next(err);
-      }
-    },
-
-    // PUT /api/<resource>/:id  - admin only
-    update: async (req, res, next) => {
-      try {
-        const item = await Model.findByIdAndUpdate(req.params.id, req.body, {
-          new: true,
-          runValidators: true,
+        const item = await delegate.findUnique({
+          where: { id: req.params.id },
         });
         if (!item) return res.status(404).json({ message: "Not found" });
-        res.json(item);
+        res.json({
+          ...item,
+          _id: item.id,
+        });
       } catch (err) {
         next(err);
       }
     },
 
-    // DELETE /api/<resource>/:id  - admin only
+    // POST /api/<resource> - admin only
+    create: async (req, res, next) => {
+      try {
+        const item = await delegate.create({
+          data: req.body,
+        });
+        res.status(201).json({
+          ...item,
+          _id: item.id,
+        });
+      } catch (err) {
+        next(err);
+      }
+    },
+
+    // PUT /api/<resource>/:id - admin only
+    update: async (req, res, next) => {
+      try {
+        const item = await delegate.update({
+          where: { id: req.params.id },
+          data: req.body,
+        });
+        res.json({
+          ...item,
+          _id: item.id,
+        });
+      } catch (err) {
+        if (err.code === "P2025") {
+          return res.status(404).json({ message: "Not found" });
+        }
+        next(err);
+      }
+    },
+
+    // DELETE /api/<resource>/:id - admin only
     remove: async (req, res, next) => {
       try {
-        const item = await Model.findByIdAndDelete(req.params.id);
-        if (!item) return res.status(404).json({ message: "Not found" });
+        await delegate.delete({
+          where: { id: req.params.id },
+        });
         res.json({ message: "Deleted successfully" });
       } catch (err) {
+        if (err.code === "P2025") {
+          return res.status(404).json({ message: "Not found" });
+        }
         next(err);
       }
     },

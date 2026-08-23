@@ -4,10 +4,10 @@ import { PageShell, PageHero } from "../components/shared.jsx";
 import Seo from "../components/Seo.jsx";
 import { useLiveData } from "../hooks/useLiveData.js";
 import { insuranceApi } from "../services/api.js";
-import { INSURANCE } from "../data/mockData.js";
+import { Shield, ShieldAlert, CheckCircle2, HeartPulse, Car, Home as HomeIcon } from "lucide-react";
 
 export default function InsurancePage() {
-  const { data: plans } = useLiveData(insuranceApi.getAll, INSURANCE);
+  const { data: plans } = useLiveData(insuranceApi.getAll, []);
   return (
     <PageShell>
       <Seo title="Insurance" description="Compare health, term life, motor and travel insurance plans by premium, coverage and claim settlement ratio." />

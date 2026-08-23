@@ -1,64 +1,134 @@
 import React from "react";
 import { Link } from "react-router-dom";
 import { Phone, Mail, MapPin, Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
-import { NAV } from "../data/mockData.js";
+import { Logo } from "./shared.jsx";
+
+const FooterNav = {
+  products: [
+    { label: "Credit Cards", path: "/cards" },
+    { label: "Bank Accounts", path: "/bank" },
+    { label: "Demat Accounts", path: "/demat" },
+    { label: "Loans", path: "/loans" },
+    { label: "Insurance", path: "/insurance" },
+    { label: "Offers", path: "/offers" },
+    { label: "Blog", path: "/blog" },
+  ],
+  company: [
+    { label: "About Finovia", path: "#", isButton: true },
+    { label: "Blog & News", path: "/blog" },
+    { label: "Offers & Deals", path: "/offers" },
+    { label: "Partner With Us", path: "#", isButton: true },
+  ],
+  socials: [
+    { name: "Facebook", Icon: Facebook, href: "#" },
+    { name: "Twitter", Icon: Twitter, href: "#" },
+    { name: "Instagram", Icon: Instagram, href: "#" },
+    { name: "LinkedIn", Icon: Linkedin, href: "#" },
+  ],
+  contact: [
+    { Icon: Phone, text: "1800-123-4567" },
+    { Icon: Mail, text: "hello@finovia.in" },
+    { Icon: MapPin, text: "New Delhi, India" },
+  ],
+  legal: [
+    { label: "Privacy Policy", path: "/privacy-policy" },
+    { label: "Terms of Service", path: "/terms-of-service" },
+  ]
+};
 
 export default function Footer() {
   return (
-    <footer className="bg-slate-950 text-slate-300">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-14 grid grid-cols-2 md:grid-cols-5 gap-8">
-        <div className="col-span-2">
-          <div className="flex items-center gap-2 mb-3">
-            <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center">
-              <span className="fin-display text-white font-bold">F</span>
-            </div>
-            <span className="fin-display font-bold text-lg text-white">Finovia</span>
+    <footer className="bg-slate-900 dark:bg-slate-950 text-slate-300 dark:text-slate-400 border-t border-slate-800 transition-colors duration-300 relative">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 md:py-14 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-8">
+        <div className="sm:col-span-2">
+          <div className="mb-3">
+            <Logo dark />
           </div>
-          <p className="text-sm text-slate-400 dark:text-slate-500 max-w-xs leading-relaxed">
-            Smart financial choices, made simple. Compare and apply for credit cards, loans, insurance, and more — all in one place.
+          <p className="text-sm text-slate-400 dark:text-slate-400 max-w-xs leading-relaxed">
+            Smart financial choices, made simple. Compare and apply for credit cards, loans, insurance, and more - all in one place.
           </p>
           <div className="flex gap-3 mt-5">
-            {[Facebook, Twitter, Instagram, Linkedin].map((Icon, i) => (
-              <a key={i} href="#" className="fin-focus w-9 h-9 rounded-full bg-slate-900 flex items-center justify-center text-slate-400 dark:text-slate-500 hover:text-white hover:bg-slate-800">
+            {FooterNav.socials.map(({ Icon, name, href }, i) => (
+              <a
+                key={i}
+                href={href}
+                className="fin-focus w-10 h-10 rounded-full bg-slate-800/80 dark:bg-slate-900 border border-slate-700/60 dark:border-slate-800 flex items-center justify-center text-slate-300 dark:text-slate-400 hover:text-white hover:bg-blue-600 dark:hover:bg-blue-600 hover:border-blue-500 transition-all duration-200"
+                aria-label={`Follow Finovia on ${name}`}
+              >
                 <Icon className="w-4 h-4" />
               </a>
             ))}
           </div>
         </div>
+
+        {/* Products Column */}
         <div>
           <h4 className="fin-display text-white text-sm font-semibold mb-3">Products</h4>
           <ul className="space-y-2 text-sm">
-            {NAV.slice(0, 5).map((item) => (
-              <li key={item.key}>
-                <Link to={`/${item.key}`} className="fin-focus text-slate-400 dark:text-slate-500 hover:text-white">{item.label}</Link>
+            {FooterNav.products.map((item, idx) => (
+              <li key={idx}>
+                <Link
+                  to={item.path}
+                  className="fin-focus fin-link-rtl text-slate-300 dark:text-slate-400 hover:text-white transition-colors duration-200 inline-block py-0.5"
+                >
+                  {item.label}
+                </Link>
               </li>
             ))}
           </ul>
         </div>
+
+        {/* Company Column */}
         <div>
           <h4 className="fin-display text-white text-sm font-semibold mb-3">Company</h4>
-          <ul className="space-y-2 text-sm text-slate-400 dark:text-slate-500">
-            <li><button className="fin-focus hover:text-white">About Finovia</button></li>
-            <li><Link to="/blog" className="fin-focus hover:text-white">Blog & News</Link></li>
-            <li><Link to="/offers" className="fin-focus hover:text-white">Offers & Deals</Link></li>
-            <li><button className="fin-focus hover:text-white">Partner With Us</button></li>
+          <ul className="space-y-2 text-sm text-slate-300 dark:text-slate-400">
+            {FooterNav.company.map((item, idx) => (
+              <li key={idx}>
+                {item.isButton ? (
+                  <button className="fin-focus fin-link-rtl text-slate-300 dark:text-slate-400 hover:text-white transition-colors duration-200 text-left py-0.5">
+                    {item.label}
+                  </button>
+                ) : (
+                  <Link
+                    to={item.path}
+                    className="fin-focus fin-link-rtl text-slate-300 dark:text-slate-400 hover:text-white transition-colors duration-200 inline-block py-0.5"
+                  >
+                    {item.label}
+                  </Link>
+                )}
+              </li>
+            ))}
           </ul>
         </div>
+
+        {/* Get in touch Column */}
         <div>
           <h4 className="fin-display text-white text-sm font-semibold mb-3">Get in touch</h4>
-          <ul className="space-y-2.5 text-sm text-slate-400 dark:text-slate-500">
-            <li className="flex items-center gap-2"><Phone className="w-3.5 h-3.5" /> 1800-123-4567</li>
-            <li className="flex items-center gap-2"><Mail className="w-3.5 h-3.5" /> hello@finovia.in</li>
-            <li className="flex items-center gap-2"><MapPin className="w-3.5 h-3.5" /> New Delhi, India</li>
+          <ul className="space-y-2.5 text-sm text-slate-300 dark:text-slate-400">
+            {FooterNav.contact.map(({ Icon, text }, idx) => (
+              <li key={idx} className="flex items-center gap-2">
+                <Icon className="w-4 h-4 text-blue-400 shrink-0" />
+                {text}
+              </li>
+            ))}
           </ul>
         </div>
       </div>
-      <div className="border-t border-slate-900">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-slate-500 dark:text-slate-400">
+
+      {/* Bottom Legal Bar */}
+      <div className="border-t border-slate-800/80 dark:border-slate-900">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-5 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400 dark:text-slate-400 text-center sm:text-left">
           <p>© 2026 Finovia Financial Technologies Pvt. Ltd. All rights reserved.</p>
           <div className="flex gap-4">
-            <button className="fin-focus hover:text-slate-300">Privacy Policy</button>
-            <button className="fin-focus hover:text-slate-300">Terms of Service</button>
+            {FooterNav.legal.map((item, idx) => (
+              <Link
+                key={idx}
+                to={item.path}
+                className="fin-focus fin-link-rtl text-slate-400 dark:text-slate-400 hover:text-white transition-colors duration-200"
+              >
+                {item.label}
+              </Link>
+            ))}
           </div>
         </div>
       </div>

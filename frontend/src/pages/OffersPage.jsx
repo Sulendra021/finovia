@@ -4,17 +4,26 @@ import { PageShell, PageHero } from "../components/shared.jsx";
 import Seo from "../components/Seo.jsx";
 import { useLiveData } from "../hooks/useLiveData.js";
 import { offersApi } from "../services/api.js";
-import { OFFERS, COLOR_MAP } from "../data/mockData.js";
+import { COLOR_MAP } from "../data/mockData.js";
+import { Tag, Sparkles, Gift } from "lucide-react";
 
 export default function OffersPage() {
-  const { data: offers } = useLiveData(offersApi.getAll, OFFERS);
+  const { data: offers } = useLiveData(offersApi.getAll, []);
+  
+  const defaultColor = {
+    bg: "bg-blue-50 dark:bg-blue-950/60",
+    text: "text-blue-700 dark:text-blue-400",
+    ring: "ring-blue-200 dark:ring-blue-800",
+    dot: "bg-blue-500",
+  };
+
   return (
     <PageShell>
       <Seo title="Offers & Deals" description="Live cashback boosts, fee waivers and limited-time rates from Finovia's banking partners." />
       <PageHero eyebrow="Offers & Deals" tone="amber" title="Live deals, updated weekly" subtitle="Cashback boosts, fee waivers and limited-time rates from Finovia's banking partners." />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {offers.map((o) => {
-          const c = COLOR_MAP[o.color] || COLOR_MAP.blue;
+          const c = (o.color && COLOR_MAP[o.color]) || defaultColor;
           return (
             <div key={o.id || o._id} className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 p-6 hover:shadow-lg transition-all">
               <span className={`inline-flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-full ring-1 ${c.bg} ${c.text} ${c.ring}`}>

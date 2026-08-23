@@ -1,10 +1,13 @@
 require("dotenv").config({ override: true });
 const express = require("express");
 const cors = require("cors");
-const morgan = require("morgan");
 const cookieParser = require("cookie-parser");
+const helmet = require("helmet");
 const connectDB = require("./config/db");
+const prisma = require("./config/prisma");
+const { requestTracer } = require("./middleware/requestTracer");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
+const { apiLimiter, authLimiter } = require("./middleware/rateLimiter");
 
 const authRoutes = require("./routes/authRoutes");
 const creditCardRoutes = require("./routes/creditCardRoutes");
@@ -17,19 +20,72 @@ const blogRoutes = require("./routes/blogRoutes");
 const applicationRoutes = require("./routes/applicationRoutes");
 const userRoutes = require("./routes/userRoutes");
 const adminRoutes = require("./routes/adminRoutes");
+const bulkRoutes = require("./routes/bulkRoutes");
 
 connectDB();
 
 const app = express();
 
-app.use(cors({ origin: process.env.CLIENT_URL || "*", credentials: true }));
-app.use(express.json());
+// Security headers with Helmet
+app.use(helmet());
+
+// Allowed origins check for CORS
+const allowedOrigins = process.env.CLIENT_URL ? process.env.CLIENT_URL.split(",") : ["http://localhost:5173"];
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+  })
+);
+
+// Payload size limit to prevent Denial of Service (DoS)
+app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
-if (process.env.NODE_ENV !== "production") app.use(morgan("dev"));
 
-app.get("/api/health", (req, res) => res.json({ status: "ok", service: "finovia-backend" }));
+// Request tracer & structured correlation logger middleware
+app.use(requestTracer);
 
-app.use("/api/auth", authRoutes);
+// Global API Rate Limiter
+app.use("/api/", apiLimiter);
+
+// Liveness probe (/health)
+app.get("/api/health", (req, res) =>
+  res.json({
+    status: "ok",
+    service: "finovia-backend",
+    timestamp: new Date().toISOString(),
+    requestId: req.requestId,
+  })
+);
+
+// Readiness probe (/readiness) - verifies PostgreSQL database connection health
+app.get("/api/readiness", async (req, res) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    return res.json({
+      status: "ready",
+      database: "connected",
+      timestamp: new Date().toISOString(),
+      requestId: req.requestId,
+    });
+  } catch (err) {
+    return res.status(503).json({
+      status: "unhealthy",
+      database: "disconnected",
+      timestamp: new Date().toISOString(),
+      requestId: req.requestId,
+    });
+  }
+});
+
+// Apply strict rate limiting to auth routes
+app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/credit-cards", creditCardRoutes);
 app.use("/api/bank-accounts", bankAccountRoutes);
 app.use("/api/demat-accounts", dematRoutes);
@@ -40,6 +96,7 @@ app.use("/api/blog", blogRoutes);
 app.use("/api/applications", applicationRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/data", bulkRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

@@ -13,7 +13,7 @@ npm run dev               # start with nodemon on http://localhost:5000
 ```
 
 `npm run seed` also creates an admin login if one doesn't exist yet:
-`admin@finovia.in` / `admin123` — use it to log into the frontend's `/admin` panel.
+`admin@finovia.in` / `admin123` - use it to log into the frontend's `/admin` panel.
 
 ## Structure
 
@@ -51,11 +51,11 @@ src/
 | Admin stats | `/api/admin/stats` |
 
 Every product resource above supports:
-- `GET /` — list all
-- `GET /:id` — single record
-- `POST /`, `PUT /:id`, `DELETE /:id` — admin only (JWT + `role: "admin"`)
+- `GET /` - list all
+- `GET /:id` - single record
+- `POST /`, `PUT /:id`, `DELETE /:id` - admin only (JWT + `role: "admin"`)
 
-`POST /api/applications` is the "Apply Now" endpoint — it's what step 5→6 of
+`POST /api/applications` is the "Apply Now" endpoint - it's what step 5→6 of
 the user journey (Apply Now → Commission) hits when a user applies to a
 product. `GET /api/applications/me` returns the logged-in user's own
 applications, used by the frontend Dashboard page.
