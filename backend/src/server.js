@@ -52,7 +52,7 @@ app.use(requestTracer);
 // Global API Rate Limiter
 app.use("/api/", apiLimiter);
 
-// Render and other platform probes commonly check the service root.
+// Render commonly probes the service root.
 app.get("/", (req, res) =>
   res.json({
     status: "ok",
