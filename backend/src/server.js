@@ -22,8 +22,6 @@ const userRoutes = require("./routes/userRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const bulkRoutes = require("./routes/bulkRoutes");
 
-connectDB();
-
 const app = express();
 
 // Security headers with Helmet
@@ -53,6 +51,16 @@ app.use(requestTracer);
 
 // Global API Rate Limiter
 app.use("/api/", apiLimiter);
+
+// Render and other platform probes commonly check the service root.
+app.get("/", (req, res) =>
+  res.json({
+    status: "ok",
+    service: "finovia-backend",
+    health: "/api/health",
+    readiness: "/api/readiness",
+  })
+);
 
 // Liveness probe (/health)
 app.get("/api/health", (req, res) =>
@@ -102,4 +110,13 @@ app.use(notFound);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Finovia API running on port ${PORT}`));
+
+async function startServer() {
+  await connectDB();
+  app.listen(PORT, "0.0.0.0", () => console.log(`Finovia API running on port ${PORT}`));
+}
+
+startServer().catch((err) => {
+  console.error(`Server startup error: ${err.message}`);
+  process.exit(1);
+});
