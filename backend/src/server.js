@@ -28,11 +28,18 @@ const app = express();
 app.use(helmet());
 
 // Allowed origins check for CORS
-const allowedOrigins = process.env.CLIENT_URL ? process.env.CLIENT_URL.split(",") : ["http://localhost:5173"];
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://finovia-ten.vercel.app",
+  ...(process.env.CLIENT_URL || "").split(","),
+]
+  .map((origin) => origin.trim().replace(/\/$/, ""))
+  .filter(Boolean);
 app.use(
   cors({
     origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
+      const normalizedOrigin = origin ? origin.trim().replace(/\/$/, "") : origin;
+      if (!normalizedOrigin || allowedOrigins.includes(normalizedOrigin)) {
         callback(null, true);
       } else {
         callback(new Error("Not allowed by CORS"));
