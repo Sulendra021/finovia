@@ -7,12 +7,13 @@ const columns = [
   { key: "title", label: "Title" }, { key: "category", label: "Category" }, { key: "readTime", label: "Read time" },
 ];
 export const blogFormFields = [
-  { name: "title", label: "Title", required: true },
-  { name: "category", label: "Category", required: true, placeholder: "e.g. Credit Cards" },
-  { name: "excerpt", label: "Excerpt", type: "textarea", required: true },
-  { name: "content", label: "Full content", type: "textarea" },
-  { name: "readTime", label: "Read time", placeholder: "e.g. 6 min read" },
-  { name: "author", label: "Author", placeholder: "Finovia Team" },
+  { name: "title", label: "Title", required: true, placeholder: "Post Title" },
+  { name: "category", label: "Category", required: true, placeholder: "e.g. Credit Cards, Personal Finance" },
+  { name: "imageUrl", label: "Featured Image URL", placeholder: "https://images.unsplash.com/photo-..." },
+  { name: "readTime", label: "Read Time", placeholder: "e.g. 5 min read" },
+  { name: "author", label: "Author Name", placeholder: "Finovia Editorial Team" },
+  { name: "excerpt", label: "Short Summary / Excerpt", type: "textarea", required: true, placeholder: "A brief summary of the blog post..." },
+  { name: "content", label: "Full Article Content", type: "textarea", required: true, placeholder: "Write full blog article here..." },
 ];
 
 export default function AdminBlog() {

@@ -98,25 +98,26 @@ model WishlistItem {
 }
 
 model CreditCard {
-  id          String       @id @default(uuid())
+  id          String   @id @default(uuid())
   name        String
   bank        String
-  category    CardCategory
-  joiningFee  String       @default("Free")
-  annualFee   String       @default("Free")
+  category    String   @default("Cashback")
+  categories  String[] @default([])
+  joiningFee  String   @default("Free")
+  annualFee   String   @default("Free")
   rewardRate  String?
   cashback    String?
-  rating      Float        @default(4.5)
+  rating      Float    @default(4.5)
   tags        String[]
-  gradient    String       @default("from-blue-700 via-blue-600 to-blue-800")
-  active      Boolean      @default(true)
+  gradient    String   @default("from-blue-700 via-blue-600 to-blue-800")
+  active      Boolean  @default(true)
   description String?
   applyUrl    String?
   buttonText  String?
   imageUrl    String?
   imageAlt    String?
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@index([active, category])
   @@index([bank])
@@ -131,6 +132,8 @@ model BankAccount {
   interest   String      @default("0.00")
   minBalance String      @default("0")
   features   String[]
+  imageUrl   String?
+  imageAlt   String?
   active     Boolean     @default(true)
   createdAt  DateTime    @default(now())
   updatedAt  DateTime    @updatedAt
@@ -148,6 +151,8 @@ model DematAccount {
   opening   String   @default("Free")
   rating    Float    @default(4.5)
   features  String[]
+  imageUrl  String?
+  imageAlt  String?
   active    Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -210,6 +215,7 @@ model BlogPost {
   content   String   @default("")
   readTime  String   @default("5 min read")
   author    String   @default("Finovia Team")
+  imageUrl  String?
   published Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

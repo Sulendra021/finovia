@@ -329,4 +329,38 @@ async function verifyOtp(req, res, next) {
   }
 }
 
-module.exports = { register, login, getMe, forgotPassword, resetPassword, sendOtp, verifyOtp };
+// PUT /api/auth/change-password
+async function changePassword(req, res, next) {
+  try {
+    const { currentPassword, newPassword } = req.body;
+    if (!currentPassword || !newPassword) {
+      return res.status(400).json({ message: "Current password and new password are required" });
+    }
+    if (newPassword.length < 6) {
+      return res.status(400).json({ message: "New password must be at least 6 characters long" });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id }
+    });
+
+    if (!user || !(await bcrypt.compare(currentPassword, user.password))) {
+      return res.status(400).json({ message: "Current password is incorrect" });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(newPassword, salt);
+
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { password: hashedPassword }
+    });
+
+    res.json({ message: "Password updated successfully!" });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { register, login, getMe, forgotPassword, resetPassword, sendOtp, verifyOtp, changePassword };
+

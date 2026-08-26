@@ -269,6 +269,14 @@ body {
   animation: fadeIn 0.2s ease-out forwards;
 }
 
+@keyframes finShimmer {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+.animate-finShimmer {
+  animation: finShimmer 2.5s infinite ease-in-out;
+}
+
 /* Custom Scrollbar Utilities */
 .fin-scrollbar-y {
   overflow-y: auto;

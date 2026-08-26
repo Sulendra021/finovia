@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, ShieldCheck, Lock, CreditCard, ArrowRight, Check } from "lucide-react";
+import { ArrowLeft, ShieldCheck, Lock, CreditCard, ArrowRight, Check, Gift, ChevronRight } from "lucide-react";
 import toast from "react-hot-toast";
 import Seo from "../components/Seo.jsx";
-import { PageShell } from "../components/shared.jsx";
+import { PageShell, TermsConditionsModal } from "../components/shared.jsx";
 import { creditCardsApi, applicationsApi } from "../services/api.js";
 import { useAuth } from "../context/AuthContext.jsx";
 
@@ -18,6 +18,7 @@ export default function CreditCardApplyPage() {
   const [email, setEmail] = useState(user?.email || "");
   const [phone, setPhone] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -63,13 +64,14 @@ export default function CreditCardApplyPage() {
 
       toast.success("Details submitted! Redirecting to application page...");
 
-      // Redirect to issuer URL
+      // Redirect to issuer URL in a new tab (_blank)
       if (card.applyUrl) {
         let targetUrl = String(card.applyUrl).trim();
         if (!/^https?:\/\//i.test(targetUrl)) {
           targetUrl = `https://${targetUrl}`;
         }
-        window.location.href = targetUrl;
+        window.open(targetUrl, "_blank", "noopener,noreferrer");
+        navigate("/cards");
       } else {
         navigate("/cards");
       }
@@ -98,7 +100,7 @@ export default function CreditCardApplyPage() {
           <h2 className="fin-display text-xl font-bold text-slate-900 dark:text-white">Card Not Found</h2>
           <button
             onClick={() => navigate("/cards")}
-            className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-semibold"
+            className="px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-semibold cursor-pointer"
           >
             Back to Credit Cards
           </button>
@@ -111,51 +113,50 @@ export default function CreditCardApplyPage() {
     <PageShell>
       <Seo title={`Apply for ${card.name} | Finovia`} description={`Complete your lead details to apply for ${card.name}`} />
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 space-y-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-6">
         {/* Back Button */}
         <button
           onClick={() => navigate(-1)}
-          className="fin-focus inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 transition-colors"
+          className="fin-focus inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800 transition-colors cursor-pointer"
         >
           <ArrowLeft className="w-4 h-4" /> Back
         </button>
+ 
 
-        {/* Application Lead Box */}
+        {/* Application Lead Form Card */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 sm:p-10 shadow-xl space-y-8 relative overflow-hidden">
           {/* Header */}
           <div className="space-y-4">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 text-xs font-bold">
-              <ShieldCheck className="w-3.5 h-3.5" /> Official Application Portal
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 text-xs font-bold border border-blue-200/60 dark:border-blue-800">
+              <ShieldCheck className="w-3.5 h-3.5" /> Application Portal for Cashback & Benefits
             </span>
 
-            <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-5 p-4 sm:p-5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
               {card.imageUrl ? (
-                <img src={card.imageUrl} alt={card.name} className="w-20 h-12 object-contain shrink-0" />
+                <div className="w-28 h-18 bg-white dark:bg-slate-900 rounded-xl p-2 border border-slate-200/70 dark:border-slate-800 flex items-center justify-center shrink-0 shadow-sm">
+                  <img src={card.imageUrl} alt={card.name} loading="lazy" className="max-h-full max-w-full object-contain" />
+                </div>
               ) : (
-                <div className="w-14 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white shrink-0">
-                  <CreditCard className="w-6 h-6" />
+                <div className="w-24 h-16 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white shrink-0 shadow-md">
+                  <CreditCard className="w-7 h-7" />
                 </div>
               )}
-              <div>
-                <h2 className="fin-display text-lg font-bold text-slate-900 dark:text-white">
+              <div className="space-y-1">
+                <h2 className="fin-display text-xl font-extrabold text-slate-900 dark:text-white">
                   {card.name}
                 </h2>
-                <p className="text-xs text-slate-500 dark:text-slate-400 font-medium">
-                  {card.bank || "Partner Issuer"} • Fee: {card.annualFee || "Free"}
+                <p className="text-xs text-slate-500 dark:text-slate-400 font-semibold">
+                  {card.bank || "Partner Issuer"} • Annual Fee: <span className="text-slate-800 dark:text-slate-200 font-bold">{card.annualFee || "Free"}</span>
                 </p>
               </div>
             </div>
-
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 leading-relaxed">
-              Please enter your contact information to submit your lead application. Once submitted, you will be redirected to the bank's official application portal.
-            </p>
           </div>
 
           {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6 pt-2">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
                   Full Name <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -164,16 +165,16 @@ export default function CreditCardApplyPage() {
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="e.g. Rahul Sharma"
-                  className="fin-focus w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-xs font-medium text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 transition-all"
+                  className="fin-focus w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/90 text-xs font-medium text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
                   Mobile Number <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative"> 
-                  <span className="absolute left-4 top-3 text-xs font-semibold text-slate-400">+91</span>
+                  <span className="absolute left-4 top-3.5 text-xs font-bold text-slate-400">+91</span>
                   <input
                     type="tel"
                     required
@@ -181,13 +182,13 @@ export default function CreditCardApplyPage() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value.replace(/\D/g, ""))}
                     placeholder="9876543210"
-                    className="fin-focus w-full pl-14 pr-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-xs font-medium text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 transition-all"
+                    className="fin-focus w-full pl-14 pr-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/90 text-xs font-medium text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 transition-all"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5">
                   Email Address <span className="text-rose-500">*</span>
                 </label>
                 <input
@@ -196,21 +197,21 @@ export default function CreditCardApplyPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="rahul@example.com"
-                  className="fin-focus w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800 text-xs font-medium text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 transition-all"
+                  className="fin-focus w-full px-4 py-3.5 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/90 text-xs font-medium text-slate-900 dark:text-white focus:bg-white dark:focus:bg-slate-900 transition-all"
                 />
               </div>
             </div>
 
-            <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-400 border-t border-slate-100 dark:border-slate-800">
-              <span className="font-bold text-emerald-600 dark:text-emerald-400">
-                Zero Convenience Fee
+            <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500 dark:text-slate-400 border-t border-slate-100 dark:border-slate-800"> 
+              <span className="flex items-center gap-1 text-[11px]">
+                <Lock className="w-3.5 h-3.5 text-slate-400" /> Encrypted & Secure
               </span>
             </div>
 
             <button
               type="submit"
               disabled={submitting}
-              className="fin-focus w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-xs shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+              className="fin-focus w-full py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 active:from-blue-700 text-white font-black text-xs shadow-lg shadow-blue-600/30 flex items-center justify-center gap-2 transition-all disabled:opacity-50 cursor-pointer tracking-wide"
             >
               {submitting ? "Submitting Lead & Redirecting..." : "Submit & Continue to Official Partner Site"}
               <ArrowRight className="w-4 h-4" />
@@ -218,6 +219,12 @@ export default function CreditCardApplyPage() {
           </form>
         </div>
       </div>
+
+      <TermsConditionsModal
+        isOpen={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+        cardName={card?.name}
+      />
     </PageShell>
   );
 }

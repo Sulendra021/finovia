@@ -92,6 +92,69 @@ async function getMyApplications(req, res, next) {
   }
 }
 
+// Helper to dynamically resolve product details (name, bank, applyUrl)
+async function resolveProductDetails(productType, productId) {
+  try {
+    if (!productId) return null;
+    let product = null;
+
+    if (productType === "CreditCard") {
+      product = await prisma.creditCard.findUnique({ where: { id: productId } });
+      if (product) {
+        return {
+          id: product.id,
+          name: product.name,
+          bank: product.bank,
+          applyUrl: product.applyUrl || `/cards/${product.id}`,
+          internalUrl: `/cards/${product.id}`,
+        };
+      }
+    } else if (productType === "BankAccount") {
+      product = await prisma.bankAccount.findUnique({ where: { id: productId } });
+      if (product) {
+        return {
+          id: product.id,
+          name: product.name,
+          bank: product.bank,
+          internalUrl: `/bank`,
+        };
+      }
+    } else if (productType === "DematAccount") {
+      product = await prisma.dematAccount.findUnique({ where: { id: productId } });
+      if (product) {
+        return {
+          id: product.id,
+          name: product.name,
+          bank: product.name,
+          internalUrl: `/demat`,
+        };
+      }
+    } else if (productType === "Loan") {
+      product = await prisma.loan.findUnique({ where: { id: productId } });
+      if (product) {
+        return {
+          id: product.id,
+          name: product.name,
+          internalUrl: `/loans`,
+        };
+      }
+    } else if (productType === "Insurance") {
+      product = await prisma.insurance.findUnique({ where: { id: productId } });
+      if (product) {
+        return {
+          id: product.id,
+          name: product.name,
+          bank: product.provider,
+          internalUrl: `/insurance`,
+        };
+      }
+    }
+  } catch (err) {
+    console.error("Error resolving product details:", err);
+  }
+  return null;
+}
+
 // GET /api/applications - admin: list all leads
 async function getApplications(req, res, next) {
   try {
@@ -108,18 +171,57 @@ async function getApplications(req, res, next) {
       },
     });
 
-    const formatted = applications.map((app) => ({
-      ...app,
-      _id: app.id,
-      user: app.user
-        ? {
-            ...app.user,
-            _id: app.user.id,
-          }
-        : null,
-    }));
+    const formatted = await Promise.all(
+      applications.map(async (app) => {
+        const productDetails = await resolveProductDetails(app.productType, app.productId);
+        return {
+          ...app,
+          _id: app.id,
+          productDetails,
+          user: app.user
+            ? {
+                ...app.user,
+                _id: app.user.id,
+              }
+            : null,
+        };
+      })
+    );
 
     res.json(formatted);
+  } catch (err) {
+    next(err);
+  }
+}
+
+// GET /api/applications/:id - admin: get single lead application by ID
+async function getApplicationById(req, res, next) {
+  try {
+    const { id } = req.params;
+    const application = await prisma.application.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    if (!application) {
+      return res.status(404).json({ message: "Application lead not found" });
+    }
+
+    const productDetails = await resolveProductDetails(application.productType, application.productId);
+
+    res.json({
+      ...application,
+      _id: application.id,
+      productDetails,
+    });
   } catch (err) {
     next(err);
   }
@@ -153,4 +255,35 @@ async function getApplicationStats(req, res, next) {
   }
 }
 
-module.exports = { createApplication, getMyApplications, getApplications, getApplicationStats };
+// PUT /api/applications/:id - admin: update lead status, notes, commission
+async function updateApplication(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { status, commissionEarned, applicantName, applicantEmail, applicantPhone } = req.body;
+
+    const existing = await prisma.application.findUnique({ where: { id } });
+    if (!existing) {
+      return res.status(404).json({ message: "Application lead not found" });
+    }
+
+    const updated = await prisma.application.update({
+      where: { id },
+      data: {
+        ...(status && { status }),
+        ...(commissionEarned !== undefined && { commissionEarned: Number(commissionEarned) }),
+        ...(applicantName && { applicantName: applicantName.trim() }),
+        ...(applicantEmail && { applicantEmail: applicantEmail.toLowerCase().trim() }),
+        ...(applicantPhone && { applicantPhone: applicantPhone.trim() }),
+      },
+    });
+
+    res.json({
+      ...updated,
+      _id: updated.id,
+    });
+  } catch (err) {
+    next(err);
+  }
+}
+
+module.exports = { createApplication, getMyApplications, getApplications, getApplicationById, getApplicationStats, updateApplication };

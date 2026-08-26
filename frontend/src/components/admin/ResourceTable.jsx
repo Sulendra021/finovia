@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Pencil, Trash2, Loader2 } from "lucide-react";
+import { Pencil, Trash2, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import { bulkDataApi } from "../../services/api.js";
 import { TableHeaderBanner, TableFilterBar } from "./ResourceTableToolbar.jsx";
 import { BulkJsonModal } from "./BulkJsonModal.jsx";
@@ -15,6 +15,10 @@ export default function ResourceTable({ title, api, columns, formFields, emptyLa
   const [selectedCategory, setSelectedCategory] = useState("");
   const [minRating, setMinRating] = useState("");
   const [maxFee, setMaxFee] = useState("");
+
+  // Pagination State - 50 items per page
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null); // null = create mode, object = edit mode
@@ -41,11 +45,15 @@ export default function ResourceTable({ title, api, columns, formFields, emptyLa
 
   // Extract unique values dynamically for filters
   const uniqueBanks = Array.from(new Set(items.map((i) => i.bank).filter(Boolean))).sort();
-  const uniqueCategories = Array.from(new Set(items.map((i) => i.category).filter(Boolean))).sort();
+  const uniqueCategories = Array.from(new Set(items.flatMap((i) => Array.isArray(i.categories) && i.categories.length > 0 ? i.categories : [i.category]).filter(Boolean))).sort();
   const hasBankField = columns.some((c) => c.key === "bank");
-  const hasCategoryField = columns.some((c) => c.key === "category");
+  const hasCategoryField = columns.some((c) => c.key === "category" || c.key === "categories");
   const hasRatingField = columns.some((c) => c.key === "rating");
   const hasFeeField = columns.some((c) => c.key === "annualFee" || c.key === "fee");
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, selectedBank, selectedCategory, minRating, maxFee, pageSize]);
 
   const resetFilters = () => {
     setSearch("");
@@ -53,6 +61,7 @@ export default function ResourceTable({ title, api, columns, formFields, emptyLa
     setSelectedCategory("");
     setMinRating("");
     setMaxFee("");
+    setCurrentPage(1);
   };
 
   const filteredItems = items.filter((item) => {
@@ -63,7 +72,10 @@ export default function ResourceTable({ title, api, columns, formFields, emptyLa
     }
 
     if (selectedBank && item.bank !== selectedBank) return false;
-    if (selectedCategory && item.category !== selectedCategory) return false;
+    if (selectedCategory) {
+      const itemCats = Array.isArray(item.categories) && item.categories.length > 0 ? item.categories : [item.category];
+      if (!itemCats.includes(selectedCategory)) return false;
+    }
 
     if (minRating !== "") {
       const itemRating = Number(item.rating) || 0;
@@ -82,6 +94,10 @@ export default function ResourceTable({ title, api, columns, formFields, emptyLa
 
     return true;
   });
+
+  const totalPages = Math.ceil(filteredItems.length / pageSize) || 1;
+  const startIndex = (currentPage - 1) * pageSize;
+  const paginatedItems = filteredItems.slice(startIndex, startIndex + pageSize);
 
   const openCreate = () => {
     const blank = {};
@@ -115,7 +131,8 @@ export default function ResourceTable({ title, api, columns, formFields, emptyLa
         if (f.type === "tags") payload[f.name] = String(payload[f.name] || "").split(",").map((s) => s.trim()).filter(Boolean);
       });
       if (editing) {
-        await api.update(editing._id, payload);
+        const idToUpdate = editing._id || editing.id;
+        await api.update(idToUpdate, payload);
       } else {
         await api.create(payload);
       }
@@ -286,7 +303,7 @@ export default function ResourceTable({ title, api, columns, formFields, emptyLa
             <table className="w-full text-sm">
               <thead>
                 <tr className="bg-slate-50/80 dark:bg-slate-950/80 border-b border-slate-200/80 dark:border-slate-800 text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  <th className="px-4 py-3.5 w-10 text-center">
+                  <th className="px-4 py-3.5 w-10 text-center whitespace-nowrap">
                     <input
                       type="checkbox"
                       checked={isAllSelected}
@@ -294,17 +311,17 @@ export default function ResourceTable({ title, api, columns, formFields, emptyLa
                       className="rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
                     />
                   </th>
-                  <th className="text-left px-4 py-3.5 w-16">Sr. No.</th>
+                  <th className="text-left px-4 py-3.5 w-16 whitespace-nowrap">Sr. No.</th>
                   {columns.map((c) => (
-                    <th key={c.key} className="text-left px-6 py-3.5">
+                    <th key={c.key} className="text-left px-6 py-3.5 whitespace-nowrap">
                       {c.label}
                     </th>
                   ))}
-                  <th className="text-right px-6 py-3.5">Actions</th>
+                  <th className="text-right px-6 py-3.5 whitespace-nowrap">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
-                {filteredItems.map((item, index) => {
+                {paginatedItems.map((item, index) => {
                   const itemId = item._id || item.id;
                   const isChecked = selectedIds.includes(itemId);
                   return (
@@ -314,7 +331,7 @@ export default function ResourceTable({ title, api, columns, formFields, emptyLa
                         isChecked ? "bg-blue-50/40 dark:bg-blue-950/20" : ""
                       }`}
                     >
-                      <td className="px-4 py-4 text-center">
+                      <td className="px-4 py-4 text-center whitespace-nowrap">
                         <input
                           type="checkbox"
                           checked={isChecked}
@@ -322,19 +339,23 @@ export default function ResourceTable({ title, api, columns, formFields, emptyLa
                           className="rounded border-slate-300 dark:border-slate-700 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
                         />
                       </td>
-                      <td className="px-4 py-4 text-xs font-bold text-slate-400 dark:text-slate-500 fin-num">
-                        {index + 1}
+                      <td className="px-4 py-4 text-xs font-bold text-slate-400 dark:text-slate-500 fin-num whitespace-nowrap">
+                        {startIndex + index + 1}
                       </td>
                       {columns.map((c, idx) => (
-                        <td key={c.key} className={`px-6 py-4 ${idx === 0 ? "font-bold text-slate-900 dark:text-white" : "text-slate-600 dark:text-slate-300"}`}>
+                        <td key={c.key} className={`px-6 py-4 whitespace-nowrap ${idx === 0 ? "font-bold text-slate-900 dark:text-white" : "text-slate-600 dark:text-slate-300"}`}>
                           {c.key === "rating" ? (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 font-bold text-xs">
                               ★ {item[c.key] ?? "N/A"}
                             </span>
-                          ) : c.key === "category" ? (
-                            <span className="px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-semibold text-xs border border-blue-100 dark:border-blue-900/50">
-                              {item[c.key]}
-                            </span>
+                          ) : c.key === "category" || c.key === "categories" ? (
+                            <div className="flex flex-wrap gap-1">
+                              {(Array.isArray(item.categories) && item.categories.length > 0 ? item.categories : [item.category || item[c.key]]).filter(Boolean).map((cat, i) => (
+                                <span key={i} className="px-2.5 py-0.5 rounded-full bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-blue-400 font-semibold text-xs border border-blue-100 dark:border-blue-900/50">
+                                  {cat}
+                                </span>
+                              ))}
+                            </div>
                           ) : Array.isArray(item[c.key]) ? (
                             item[c.key].join(", ")
                           ) : (
@@ -375,6 +396,80 @@ export default function ResourceTable({ title, api, columns, formFields, emptyLa
                 })}
               </tbody>
             </table>
+          </div>
+        )}
+
+        {/* Pagination Footer */}
+        {filteredItems.length > 0 && (
+          <div className="px-6 py-4 bg-slate-50/50 dark:bg-slate-900/60 border-t border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs">
+            <div className="flex items-center gap-4 text-slate-500 dark:text-slate-400 font-medium">
+              <span>
+                Showing <strong className="text-slate-800 dark:text-white font-bold">{Math.min(startIndex + 1, filteredItems.length)}</strong> to{" "}
+                <strong className="text-slate-800 dark:text-white font-bold">{Math.min(startIndex + pageSize, filteredItems.length)}</strong> of{" "}
+                <strong className="text-slate-800 dark:text-white font-bold">{filteredItems.length}</strong> entries
+              </span>
+              <div className="flex items-center gap-2">
+                <span>Rows per page:</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value));
+                    setCurrentPage(1);
+                  }}
+                  className="px-2 py-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold text-slate-700 dark:text-slate-200"
+                >
+                  <option value={10}>10</option>
+                  <option value={20}>20</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all font-semibold flex items-center gap-1"
+              >
+                <ChevronLeft className="w-4 h-4" /> Previous
+              </button>
+
+              <div className="flex items-center gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1)
+                  .filter((page) => page === 1 || page === totalPages || Math.abs(page - currentPage) <= 1)
+                  .map((page, idx, arr) => {
+                    const prevPage = arr[idx - 1];
+                    const showEllipsis = prevPage && page - prevPage > 1;
+                    return (
+                      <React.Fragment key={page}>
+                        {showEllipsis && <span className="px-1 text-slate-400">...</span>}
+                        <button
+                          type="button"
+                          onClick={() => setCurrentPage(page)}
+                          className={`w-8 h-8 rounded-lg text-xs font-bold transition-all ${
+                            currentPage === page
+                              ? "bg-blue-600 text-white shadow-xs"
+                              : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800"
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      </React.Fragment>
+                    );
+                  })}
+              </div>
+
+              <button
+                type="button"
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                className="px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-40 disabled:cursor-not-allowed transition-all font-semibold flex items-center gap-1"
+              >
+                Next <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         )}
       </div>

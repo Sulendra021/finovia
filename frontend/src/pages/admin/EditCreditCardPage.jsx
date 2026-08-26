@@ -7,7 +7,7 @@ import { creditCardsApi, adminResourceApi } from "../../services/api.js";
 const formFields = [
   { name: "name", label: "Card name", required: true },
   { name: "bank", label: "Bank", required: true },
-  { name: "category", label: "Category", type: "select", options: ["Cashback", "Travel", "Rewards", "Premium"], required: true },
+  { name: "categories", label: "Categories (Select Multiple)", type: "multiselect", options: ["Cashback", "Travel", "Rewards", "Premium", "Fuel", "Shopping", "Luxe"] },
   { name: "joiningFee", label: "Joining fee", placeholder: "e.g. 1,000 or Free" },
   { name: "annualFee", label: "Annual fee", placeholder: "e.g. 1,000 or Free" },
   { name: "rewardRate", label: "Reward rate", placeholder: "e.g. 1-5%" },
@@ -46,8 +46,17 @@ export default function EditCreditCardPage() {
         const filled = {};
         formFields.forEach((f) => {
           const val = data[f.name];
-          filled[f.name] = f.type === "tags" ? (Array.isArray(val) ? val.join(", ") : "") : val ?? "";
+          if (f.name === "categories") {
+            filled[f.name] = Array.isArray(data.categories) && data.categories.length > 0
+              ? data.categories
+              : (data.category ? [data.category] : []);
+          } else {
+            filled[f.name] = f.type === "tags" ? (Array.isArray(val) ? val.join(", ") : "") : val ?? "";
+          }
         });
+        if (!filled.category && Array.isArray(filled.categories) && filled.categories.length > 0) {
+          filled.category = filled.categories[0];
+        }
         setForm(filled);
       })
       .catch((err) => {
@@ -74,6 +83,10 @@ export default function EditCreditCardPage() {
         if (f.type === "number") payload[f.name] = payload[f.name] === "" ? undefined : Number(payload[f.name]);
         if (f.type === "tags") payload[f.name] = String(payload[f.name] || "").split(",").map((s) => s.trim()).filter(Boolean);
       });
+
+      if (Array.isArray(payload.categories) && payload.categories.length > 0) {
+        payload.category = payload.categories[0];
+      }
 
       await adminResourceApi.creditCards.update(id, payload);
       navigate("/admin/credit-cards");
@@ -168,7 +181,45 @@ export default function EditCreditCardPage() {
                     {f.label} {f.required && <span className="text-rose-500">*</span>}
                   </label>
 
-                  {f.type === "select" ? (
+                  {f.type === "multiselect" ? (
+                    <div className="flex flex-wrap gap-2 pt-1">
+                      {f.options.map((opt) => {
+                        const selectedList = Array.isArray(form[f.name])
+                          ? form[f.name]
+                          : (form[f.name] ? [form[f.name]] : []);
+                        const checked = selectedList.includes(opt);
+                        return (
+                          <label
+                            key={opt}
+                            className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold border cursor-pointer transition-all ${checked
+                                ? "bg-blue-50 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-700 shadow-xs"
+                                : "bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-800"
+                              }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              onChange={(e) => {
+                                const current = Array.isArray(form[f.name]) ? [...form[f.name]] : (form[f.name] ? [form[f.name]] : []);
+                                let updated;
+                                if (e.target.checked) {
+                                  updated = [...current, opt];
+                                } else {
+                                  updated = current.filter((c) => c !== opt);
+                                }
+                                onChange(f.name, updated);
+                                if (updated.length > 0) {
+                                  onChange("category", updated[0]);
+                                }
+                              }}
+                              className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4"
+                            />
+                            {opt}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  ) : f.type === "select" ? (
                     <select
                       value={form[f.name] || ""}
                       onChange={(e) => onChange(f.name, e.target.value)}
@@ -203,6 +254,21 @@ export default function EditCreditCardPage() {
                       placeholder={f.placeholder}
                       className="fin-focus w-full px-4 py-3 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-800 text-xs font-semibold text-slate-800 dark:text-slate-100"
                     />
+                  )}
+
+                  {f.name === "imageUrl" && form.imageUrl && (
+                    <div className="mt-2 flex items-center gap-3 p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200 dark:border-slate-800">
+                      <img
+                        src={form.imageUrl}
+                        alt={form.imageAlt || form.name || "Preview"}
+                        className="w-14 h-14 object-contain rounded-lg bg-white p-1 border border-slate-200 dark:border-slate-700 shadow-sm"
+                        onError={(e) => { e.target.style.display = 'none'; }}
+                      />
+                      <div>
+                        <p className="text-xs font-bold text-slate-800 dark:text-slate-200">Image Preview</p>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400 truncate max-w-xs">{form.imageUrl}</p>
+                      </div>
+                    </div>
                   )}
 
                   {f.type === "tags" && (

@@ -10,6 +10,8 @@ const columns = [
 export const bankAccountFormFields = [
   { name: "name", label: "Account name", required: true },
   { name: "bank", label: "Bank", required: true },
+  { name: "imageUrl", label: "Logo Image URL", placeholder: "https://example.com/bank-logo.png" },
+  { name: "imageAlt", label: "Logo Alt Text", placeholder: "SBI Logo" },
   { name: "type", label: "Type", type: "select", options: ["Savings", "Current", "Salary", "Zero Balance"], required: true },
   { name: "interest", label: "Interest rate (% p.a.)" },
   { name: "minBalance", label: "Minimum balance" },

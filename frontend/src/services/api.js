@@ -39,6 +39,7 @@ export const authApi = {
   resetPassword: (data) => api.post("/auth/reset-password", data).then((r) => r.data),
   sendOtp: (email) => api.post("/auth/send-otp", { email }).then((r) => r.data),
   verifyOtp: (email, code) => api.post("/auth/verify-otp", { email, code }).then((r) => r.data),
+  changePassword: (data) => api.put("/auth/change-password", data).then((r) => r.data),
 };
 
 // One function per resource - each mirrors a backend route module.
@@ -59,7 +60,9 @@ export const applicationsApi = {
   apply: (data) => api.post("/applications", data).then((r) => r.data),
   mine: () => api.get("/applications/me").then((r) => r.data),
   getAll: () => api.get("/applications").then((r) => r.data),
+  getOne: (id) => api.get(`/applications/${id}`).then((r) => r.data),
   stats: () => api.get("/applications/stats").then((r) => r.data),
+  update: (id, data) => api.put(`/applications/${id}`, data).then((r) => r.data),
 };
 
 export const usersApi = {

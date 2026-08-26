@@ -23,7 +23,7 @@ function createCRUDController(modelName, options = {}) {
 
         const items = await delegate.findMany({
           where,
-          orderBy: { createdAt: "desc" },
+          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
         });
 
         // Format _id virtual to preserve API contract for frontend
@@ -57,8 +57,9 @@ function createCRUDController(modelName, options = {}) {
     // POST /api/<resource> - admin only
     create: async (req, res, next) => {
       try {
+        const { _id, id, createdAt, updatedAt, ...cleanData } = req.body;
         const item = await delegate.create({
-          data: req.body,
+          data: cleanData,
         });
         res.status(201).json({
           ...item,
@@ -72,9 +73,10 @@ function createCRUDController(modelName, options = {}) {
     // PUT /api/<resource>/:id - admin only
     update: async (req, res, next) => {
       try {
+        const { _id, id, createdAt, updatedAt, ...cleanData } = req.body;
         const item = await delegate.update({
           where: { id: req.params.id },
-          data: req.body,
+          data: cleanData,
         });
         res.json({
           ...item,

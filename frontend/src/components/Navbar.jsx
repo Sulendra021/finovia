@@ -7,7 +7,7 @@ import { useTheme } from "../context/ThemeContext.jsx";
 import { useAuth } from "../context/AuthContext.jsx";
 
 const NavbarNav = [
-  ...NAV.map((item) => ({ key: item.key, label: item.label, path: `/${item.key}`, icon: item.icon })),
+  ...NAV.map((item) => ({ key: item.key, label: item.label, path: `/${item.key}`, icon: item.icon, comingSoon: item.comingSoon })),
   { key: "calculators", label: "Calculators", path: "/calculators", icon: Calculator },
 ];
 
@@ -30,7 +30,7 @@ export default function Navbar({ menuOpen, setMenuOpen }) {
   }, [setMenuOpen]);
 
   const desktopLinkClass = ({ isActive }) =>
-    `fin-focus fin-link-rtl px-3 py-2 text-sm font-medium transition-colors duration-200 ${isActive
+    `fin-focus px-2 xl:px-3 py-1.5 text-xs xl:text-sm font-medium transition-colors duration-200 inline-flex items-center gap-1 ${isActive
       ? "text-blue-600 dark:text-blue-400 font-semibold"
       : "text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white"
     }`;
@@ -47,10 +47,19 @@ export default function Navbar({ menuOpen, setMenuOpen }) {
         </NavLink>
 
         {/* Desktop Navigation links from NavbarNav loop */}
-        <nav className="hidden lg:flex items-center gap-2">
+        <nav className="hidden lg:flex items-center gap-0.5 xl:gap-1.5">
           {NavbarNav.map((item) => (
             <NavLink key={item.key} to={item.path} className={desktopLinkClass}>
-              {item.label}
+              <div className="flex flex-col items-center">
+                {item.comingSoon ? (
+                  <span className="text-[8px] font-extrabold uppercase px-1 py-0.2 rounded-full bg-amber-100 dark:bg-amber-950/90 text-amber-700 dark:text-amber-300 border border-amber-300/80 dark:border-amber-800/80 leading-none mb-0.5 tracking-wider">
+                    SOON
+                  </span>
+                ) : (
+                  <span className="h-[11px]" />
+                )}
+                <span className="leading-none">{item.label}</span>
+              </div>
             </NavLink>
           ))}
         </nav>
@@ -84,15 +93,6 @@ export default function Navbar({ menuOpen, setMenuOpen }) {
                   className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-lg py-1.5 z-50"
                   onMouseLeave={() => setUserMenuOpen(false)}
                 >
-                  <button
-                    onClick={() => {
-                      navigate("/dashboard");
-                      setUserMenuOpen(false);
-                    }}
-                    className="fin-focus w-full flex items-center gap-2 px-3.5 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
-                  >
-                    <LayoutDashboard className="w-4 h-4" /> Dashboard
-                  </button>
                   {isAdmin && (
                     <button
                       onClick={() => {
@@ -164,28 +164,27 @@ export default function Navbar({ menuOpen, setMenuOpen }) {
               to={item.path}
               onClick={() => setMenuOpen(false)}
               className={({ isActive }) =>
-                `fin-focus w-full text-left px-3.5 py-3 rounded-xl text-sm font-medium flex items-center gap-3 transition-colors ${isActive
+                `fin-focus w-full text-left px-3.5 py-3 rounded-xl text-sm font-medium flex items-center justify-between transition-colors ${isActive
                   ? "text-blue-700 bg-blue-50 dark:bg-blue-950/80 dark:text-blue-400 font-semibold"
                   : "text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
                 }`
               }
             >
-              <item.icon className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0" /> {item.label}
+              <div className="flex items-center gap-3">
+                <item.icon className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0" />
+                <span>{item.label}</span>
+              </div>
+              {item.comingSoon && (
+                <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/80 text-amber-700 dark:text-amber-300 border border-amber-300/80 dark:border-amber-800/80 leading-none">
+                  Soon
+                </span>
+              )}
             </NavLink>
           ))}
 
           <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 space-y-1.5">
             {user ? (
               <>
-                <button
-                  onClick={() => {
-                    navigate("/dashboard");
-                    setMenuOpen(false);
-                  }}
-                  className="fin-focus w-full text-left px-3.5 py-3 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 flex items-center gap-3"
-                >
-                  <LayoutDashboard className="w-5 h-5 text-blue-600 shrink-0" /> Dashboard
-                </button>
                 {isAdmin && (
                   <button
                     onClick={() => {

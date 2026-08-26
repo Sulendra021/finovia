@@ -4,11 +4,16 @@ import ResourceTable from "../../components/admin/ResourceTable.jsx";
 import { adminResourceApi } from "../../services/api.js";
 
 const columns = [
-  { key: "name", label: "Broker" }, { key: "brokerage", label: "Brokerage" },
-  { key: "amc", label: "AMC" }, { key: "rating", label: "Rating" },
+  { key: "name", label: "Broker" },
+  { key: "brokerage", label: "Brokerage" },
+  { key: "amc", label: "AMC" },
+  { key: "rating", label: "Rating" },
 ];
+
 export const dematAccountFormFields = [
   { name: "name", label: "Broker name", required: true },
+  { name: "imageUrl", label: "Logo Image URL", placeholder: "https://example.com/logo.png" },
+  { name: "imageAlt", label: "Logo Alt Text", placeholder: "Zerodha Logo" },
   { name: "brokerage", label: "Brokerage", required: true, placeholder: "e.g. ₹20 flat / order" },
   { name: "amc", label: "AMC (₹/year)" },
   { name: "opening", label: "Account opening fee", placeholder: "Free" },

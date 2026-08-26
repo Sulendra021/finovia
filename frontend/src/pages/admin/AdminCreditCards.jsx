@@ -10,7 +10,7 @@ const columns = [
 const formFields = [
   { name: "name", label: "Card name", required: true },
   { name: "bank", label: "Bank", required: true },
-  { name: "category", label: "Category", type: "select", options: ["Cashback", "Travel", "Rewards", "Premium"], required: true },
+  { name: "categories", label: "Categories (Select Multiple)", type: "multiselect", options: ["Cashback", "Travel", "Rewards", "Premium", "Fuel", "Shopping", "Luxe"] },
   { name: "joiningFee", label: "Joining fee", placeholder: "e.g. 1,000 or Free" },
   { name: "annualFee", label: "Annual fee", placeholder: "e.g. 1,000 or Free" },
   { name: "rewardRate", label: "Reward rate", placeholder: "e.g. 1-5%" },

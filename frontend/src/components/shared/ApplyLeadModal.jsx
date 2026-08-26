@@ -98,7 +98,7 @@ export function ApplyLeadModal({ isOpen, onClose, item, productType = "CreditCar
 
           <div className="flex items-center gap-4 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/60 border border-slate-100 dark:border-slate-800">
             {item.imageUrl ? (
-              <img src={item.imageUrl} alt={item.name} className="w-16 h-10 object-contain shrink-0" />
+              <img src={item.imageUrl} alt={item.name} loading="lazy" className="w-16 h-10 object-contain shrink-0" />
             ) : (
               <div className="w-12 h-9 rounded-lg bg-blue-600 flex items-center justify-center text-white shrink-0">
                 <CreditCard className="w-5 h-5" />

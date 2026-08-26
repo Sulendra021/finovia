@@ -1,12 +1,11 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Star, ShieldCheck, Zap, Award, Check, ExternalLink, Heart } from "lucide-react";
+import { ArrowLeft, Star, ShieldCheck, Zap, Award, Check, ExternalLink, ChevronRight } from "lucide-react";
 import toast from "react-hot-toast";
 import Seo from "../components/Seo.jsx";
-import { PageShell } from "../components/shared.jsx";
-import { creditCardsApi, wishlistApi } from "../services/api.js";
+import { PageShell, TermsConditionsModal } from "../components/shared.jsx";
+import { creditCardsApi } from "../services/api.js";
 import { useAuth } from "../context/AuthContext.jsx";
-import { ApplyLeadModal } from "../components/shared/ApplyLeadModal.jsx";
 
 export default function CreditCardDetailsPage() {
   const { id } = useParams();
@@ -16,8 +15,7 @@ export default function CreditCardDetailsPage() {
   const [card, setCard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [isWishlisted, setIsWishlisted] = useState(false);
-  const [showApplyModal, setShowApplyModal] = useState(false);
+  const [showTermsModal, setShowTermsModal] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -34,22 +32,14 @@ export default function CreditCardDetailsPage() {
   }, [id]);
 
   const handleApply = () => {
-    navigate(`/cards/${id}/apply`);
-  };
-
-  const handleToggleWishlist = async () => {
-    if (!card) return;
-    const cardId = card.id || card._id;
-    setIsWishlisted((prev) => !prev);
-    if (!isWishlisted) {
-      toast.success(`Saved ${card.name} to wishlist!`);
+    if (card?.applyUrl) {
+      let targetUrl = String(card.applyUrl).trim();
+      if (!/^https?:\/\//i.test(targetUrl)) {
+        targetUrl = `https://${targetUrl}`;
+      }
+      window.open(targetUrl, "_blank", "noopener,noreferrer");
     } else {
-      toast.success(`Removed ${card.name} from saved items.`);
-    }
-    if (user) {
-      try {
-        await wishlistApi.toggle({ productType: "CreditCard", productId: cardId });
-      } catch (e) {}
+      toast.error("Application link not available.");
     }
   };
 
@@ -87,13 +77,14 @@ export default function CreditCardDetailsPage() {
 
   const tags = Array.isArray(card.tags) ? card.tags : [];
   const features = Array.isArray(card.features) ? card.features : [];
+  const rewardAmount = card.rewardAmount || "₹500";
 
   return (
     <PageShell>
       <Seo title={`${card.name} | Finovia`} description={card.description || `Details and perks of ${card.name}`} />
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
-        {/* Navigation & Actions Header */}
+        {/* Navigation Header */}
         <div className="flex items-center justify-between">
           <button
             onClick={() => navigate("/cards")}
@@ -101,42 +92,61 @@ export default function CreditCardDetailsPage() {
           >
             <ArrowLeft className="w-4 h-4" /> Back to Credit Cards
           </button>
-          <button
-            onClick={handleToggleWishlist}
-            className="fin-focus inline-flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
-          >
-            <Heart className={`w-4 h-4 ${isWishlisted ? "fill-rose-500 text-rose-500" : "text-slate-400"}`} />
-            {isWishlisted ? "Saved" : "Save to Wishlist"}
-          </button>
         </div>
 
         {/* Hero Card Visual & Quick Specs */}
         <div className="bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 sm:p-10 shadow-sm grid md:grid-cols-12 gap-8 items-center">
-          <div className="md:col-span-5 flex justify-center">
+          <div className="md:col-span-5 flex flex-col items-center justify-center gap-4">
             {card.imageUrl ? (
-              <div className="w-full max-w-xs h-48 bg-slate-50 dark:bg-slate-950 rounded-2xl p-4 border border-slate-100 dark:border-slate-800 flex items-center justify-center">
-                <img src={card.imageUrl} alt={card.name} className="max-h-full object-contain" />
+              <div className="w-full max-w-md h-64 sm:h-72 bg-slate-50 dark:bg-slate-950 rounded-2xl p-4 sm:p-6 border border-slate-100 dark:border-slate-800 flex items-center justify-center shadow-inner">
+                <img src={card.imageUrl} alt={card.name} loading="lazy" className="max-h-full max-w-full object-contain filter drop-shadow-lg hover:scale-105 transition-transform duration-300" />
               </div>
             ) : (
-              <div className={`w-full max-w-xs h-48 rounded-2xl bg-gradient-to-br ${card.gradient || "from-blue-700 via-blue-600 to-blue-800"} p-6 flex flex-col justify-between shadow-xl`}>
+              <div className={`w-full max-w-md h-64 sm:h-72 rounded-2xl bg-gradient-to-br ${card.gradient || "from-blue-700 via-blue-600 to-blue-800"} p-8 flex flex-col justify-between shadow-2xl`}>
                 <div className="flex items-center justify-between">
-                  <div className="w-10 h-7 rounded-md bg-gradient-to-br from-yellow-200 to-yellow-500" />
-                  <span className="fin-display text-white text-xs font-extrabold tracking-widest uppercase opacity-90">{card.bank || "BANK"}</span>
+                  <div className="w-12 h-8 rounded-md bg-gradient-to-br from-yellow-200 to-yellow-500 shadow-sm" />
+                  <span className="fin-display text-white text-sm font-extrabold tracking-widest uppercase opacity-90">{card.bank || "BANK"}</span>
                 </div>
-                <div className="fin-num text-white/90 text-sm tracking-widest">•••• •••• •••• 4821</div>
-                <div className="flex items-center justify-between text-white/80 text-xs">
+                <div className="fin-num text-white/90 text-lg font-mono tracking-widest">•••• •••• •••• 4821</div>
+                <div className="flex items-center justify-between text-white/80 text-xs font-semibold">
                   <span>CARD HOLDER</span>
-                  <span className="font-bold italic">VISA</span>
+                  <span className="font-bold italic text-sm">VISA</span>
                 </div>
               </div>
             )}
+
+            {/* Offer Tag right under the card image */}
+            <div className="w-full max-w-md bg-gradient-to-r from-amber-500/10 via-blue-500/10 to-emerald-500/10 border border-amber-500/30 dark:border-amber-400/30 rounded-2xl p-4 text-center shadow-xs flex flex-col items-center">
+              <span className="text-[11px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
+                Exclusive Bonus Offer
+              </span>
+              <span className="fin-display text-xl font-black text-amber-600 dark:text-amber-400 tracking-tight mt-0.5">
+                Earn Up to {card.rewardAmount || "₹500"} Cashback  
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowTermsModal(true)}
+                className="mt-2 inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 dark:text-blue-300 bg-blue-100/80 hover:bg-blue-200/80 dark:bg-blue-900/60 dark:hover:bg-blue-900/90 px-3 py-1 rounded-md transition-colors cursor-pointer border border-blue-200/60 dark:border-blue-800"
+              >
+                <span>Conditions Apply</span>
+                <ChevronRight className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+              </button>
+            </div>
           </div>
 
           <div className="md:col-span-7 space-y-4">
-            <div className="flex items-center gap-2">
-              <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 font-bold text-xs">
-                {card.category || "Credit Card"}
-              </span>
+            <div className="flex flex-wrap items-center gap-2">
+              {Array.isArray(card.categories) && card.categories.length > 0 ? (
+                card.categories.map((cat) => (
+                  <span key={cat} className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 font-bold text-xs border border-blue-200 dark:border-blue-800">
+                    {cat}
+                  </span>
+                ))
+              ) : (
+                <span className="px-3 py-1 rounded-full bg-blue-50 dark:bg-blue-950/80 text-blue-600 dark:text-blue-400 font-bold text-xs border border-blue-200 dark:border-blue-800">
+                  {card.category || "Credit Card"}
+                </span>
+              )}
               {card.rating && (
                 <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 font-bold text-xs">
                   <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> {card.rating}
@@ -180,8 +190,8 @@ export default function CreditCardDetailsPage() {
         </div>
 
         {/* Detailed Features & Highlights */}
-        <div className="grid md:grid-cols-3 gap-6">
-          <div className="md:col-span-2 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
+        <div className="grid md:grid-cols-12 gap-6">
+          <div className="md:col-span-6 bg-white dark:bg-slate-900 border border-slate-200/90 dark:border-slate-800 rounded-3xl p-6 sm:p-8 space-y-6">
             <h3 className="fin-display text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Zap className="w-5 h-5 text-blue-600" /> Key Benefits & Features
             </h3>
@@ -213,27 +223,79 @@ export default function CreditCardDetailsPage() {
               </div>
             )}
           </div>
+          {/* term and condition box */}
+          <div className="md:col-span-6 bg-slate-900 dark:bg-slate-950 text-slate-200 dark:text-slate-300 rounded-3xl p-6 sm:p-7 flex flex-col justify-between space-y-6 shadow-xl border border-slate-800 relative overflow-hidden">
+            {/* Subtle glow effect background */}
+            <div className="absolute -top-12 -right-12 w-36 h-36 bg-blue-600/10 rounded-full blur-2xl pointer-events-none" />
 
-          <div className="bg-gradient-to-br from-slate-900 to-slate-950 text-white rounded-3xl p-6 sm:p-8 flex flex-col justify-between space-y-6 shadow-md">
-            <div className="space-y-3">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 text-xs font-bold text-blue-300">
-                <ShieldCheck className="w-3.5 h-3.5" /> Safe & Verified
-              </span>
-              <h4 className="fin-display text-xl font-bold">Ready to apply?</h4>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                Application processes are directly powered by partner banks. Instant digital decisioning for eligible applicants.
-              </p>
+            <div className="space-y-5 relative z-10">
+              {/* Header Badge & Terms Link */}
+              <div className="flex items-center justify-between gap-2 pb-1 border-b border-slate-800/80">
+                
+                <button
+                  type="button"
+                  onClick={() => setShowTermsModal(true)}
+                  className="inline-flex items-center gap-1 text-xl font-bold text-blue-300 hover:text-blue-200 cursor-pointer"
+                >
+                  <span>Terms & Conditions</span>
+                </button>
+              </div>
+
+              {/* Title & Subtitle */}
+              <div className="space-y-1">
+                <h4 className="fin-display text-xl font-black text-white tracking-tight">How to Claim Your Bonus</h4>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  Follow these 2 mandatory steps to earn up to <span className="font-bold text-amber-400">₹500 Paytm Cashback</span>:
+                </p>
+              </div>
+
+              {/* Formatted Steps */}
+              <div className="space-y-2.5">
+                <div className="flex items-start gap-3 bg-slate-800/80 dark:bg-slate-900 p-3 rounded-2xl border border-slate-700/60 dark:border-slate-800 transition-colors">
+                  <div className="w-6 h-6 rounded-xl bg-blue-600/90 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+                    1
+                  </div>
+                  <div>
+                    <h5 className="text-xs font-bold text-white">Apply via Official Link</h5>
+                    <p className="text-[11px] text-slate-300 dark:text-slate-400 mt-0.5 leading-snug">
+                      Complete your card application using the provided link.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-3 bg-slate-800/80 dark:bg-slate-900 p-3 rounded-2xl border border-slate-700/60 dark:border-slate-800 transition-colors">
+                  <div className="w-6 h-6 rounded-xl bg-indigo-600/90 text-white font-black text-xs flex items-center justify-center shrink-0 shadow-sm mt-0.5">
+                    2
+                  </div>
+                  <div>
+                    <h5 className="text-xs font-bold text-white">Submit Exclusive Bonus Form</h5>
+                    <p className="text-[11px] text-slate-300 dark:text-slate-400 mt-0.5 leading-snug">
+                      Fill out the bonus claim form right after applying.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <button
-              onClick={handleApply}
-              className="fin-focus w-full py-3 bg-white text-slate-900 font-bold rounded-xl text-xs hover:bg-slate-100 transition-colors shadow-sm"
-            >
-              Start Application
-            </button>
+            {/* Primary Action CTA */}
+            <div className="pt-2 relative z-10">
+              <button
+                onClick={() => navigate(`/cards/${card?.id || id}/apply`)}
+                className="fin-focus w-full py-3.5 bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black rounded-2xl text-xs shadow-lg shadow-blue-600/25 transition-all transform active:scale-98 cursor-pointer flex items-center justify-center gap-2 tracking-wide"
+              >
+                <span>Apply Now & Claim Bonus</span>
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
+
+      <TermsConditionsModal
+        isOpen={showTermsModal}
+        onClose={() => setShowTermsModal(false)}
+        cardName={card.name}
+      />
     </PageShell>
   );
 }

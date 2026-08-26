@@ -5,10 +5,10 @@ import {
 
 export const NAV = [
   { key: "cards", label: "Credit Cards", icon: CreditCard, image: "/nav/credit_card.webp" },
-  { key: "bank", label: "Bank Accounts", icon: Landmark, image: "/nav/bank_account.webp" },
-  { key: "demat", label: "Demat Accounts", icon: TrendingUp, image: "/nav/demat_account.webp" },
-  { key: "loans", label: "Loans", icon: Wallet, image: "/nav/lone.webp" },
-  { key: "insurance", label: "Insurance", icon: ShieldCheck, image: "/nav/insurance.webp" },
+  { key: "bank", label: "Bank Accounts", icon: Landmark, image: "/nav/bank_account.webp", comingSoon: true },
+  { key: "demat", label: "Demat Accounts", icon: TrendingUp, image: "/nav/demat_account.webp", comingSoon: true },
+  { key: "loans", label: "Loans", icon: Wallet, image: "/nav/lone.webp", comingSoon: true },
+  { key: "insurance", label: "Insurance", icon: ShieldCheck, image: "/nav/insurance.webp", comingSoon: true },
   { key: "offers", label: "Offers", icon: Tag },
   { key: "blog", label: "Blog", icon: Newspaper },
 ];

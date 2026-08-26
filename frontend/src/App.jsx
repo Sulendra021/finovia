@@ -1,15 +1,18 @@
 import React, { useState, useEffect, lazy, Suspense } from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, useLocation, Navigate } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 import Navbar from "./components/Navbar.jsx";
 import Footer from "./components/Footer.jsx";
 import ProtectedRoute from "./components/ProtectedRoute.jsx";
+import AccessControlGate from "./components/AccessControlGate.jsx";
+import { Landmark, TrendingUp, Wallet, ShieldCheck, Tag } from "lucide-react";
 import { PageTransition } from "./components/transitions/PageTransition.jsx";
 import { PageSkeleton } from "./components/ui/Skeleton.jsx";
 
 // Route-level Code Splitting for heavy pages
 const HomePage = lazy(() => import("./pages/HomePage.jsx"));
 const CreditCardsPage = lazy(() => import("./pages/CreditCardsPage.jsx"));
+const CompareCardsPage = lazy(() => import("./pages/CompareCardsPage.jsx"));
 const CreditCardDetailsPage = lazy(() => import("./pages/CreditCardDetailsPage.jsx"));
 const CreditCardApplyPage = lazy(() => import("./pages/CreditCardApplyPage.jsx"));
 const BankAccountsPage = lazy(() => import("./pages/BankAccountsPage.jsx"));
@@ -18,6 +21,7 @@ const LoansPage = lazy(() => import("./pages/LoansPage.jsx"));
 const InsurancePage = lazy(() => import("./pages/InsurancePage.jsx"));
 const OffersPage = lazy(() => import("./pages/OffersPage.jsx"));
 const BlogPage = lazy(() => import("./pages/BlogPage.jsx"));
+const BlogDetailPage = lazy(() => import("./pages/BlogDetailPage.jsx"));
 const CalculatorsPage = lazy(() => import("./pages/CalculatorsPage.jsx"));
 const AuthPage = lazy(() => import("./pages/AuthPage.jsx"));
 const DashboardPage = lazy(() => import("./pages/DashboardPage.jsx"));
@@ -41,6 +45,9 @@ const AdminComingSoon = lazy(() => import("./pages/admin/AdminComingSoon.jsx"));
 
 const GenericEditResourcePage = lazy(() => import("./pages/admin/GenericEditResourcePage.jsx"));
 const BulkJsonPipelinePage = lazy(() => import("./pages/admin/BulkJsonPipelinePage.jsx"));
+
+const EditLeadPage = lazy(() => import("./pages/admin/EditLeadPage.jsx"));
+const AdminSettingsPage = lazy(() => import("./pages/admin/AdminSettingsPage.jsx"));
 
 export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -68,20 +75,69 @@ export default function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/cards" element={<CreditCardsPage />} />
+            <Route path="/cards/compare" element={<CompareCardsPage />} />
             <Route path="/cards/:id" element={<CreditCardDetailsPage />} />
             <Route path="/cards/:id/apply" element={<CreditCardApplyPage />} />
-            <Route path="/bank" element={<BankAccountsPage />} />
-            <Route path="/demat" element={<DematPage />} />
-            <Route path="/loans" element={<LoansPage />} />
-            <Route path="/insurance" element={<InsurancePage />} />
+            <Route
+              path="/bank"
+              element={
+                <AccessControlGate
+                  eyebrow="Bank Accounts"
+                  title="Bank Accounts"
+                  subtitle="Compare interest rates, minimum balance requirements and features across savings, salary and current accounts."
+                  icon={Landmark}
+                >
+                  <BankAccountsPage />
+                </AccessControlGate>
+              }
+            />
+            <Route
+              path="/demat"
+              element={
+                <AccessControlGate
+                  eyebrow="Demat Accounts"
+                  title="Demat Accounts"
+                  subtitle="Compare brokerage, annual maintenance charges and platform features across India's top discount and full-service brokers."
+                  icon={TrendingUp}
+                >
+                  <DematPage />
+                </AccessControlGate>
+              }
+            />
+            <Route
+              path="/loans"
+              element={
+                <AccessControlGate
+                  eyebrow="Loans"
+                  title="Loans"
+                  subtitle="From a quick personal loan to a 30-year home loan - compare rates and estimate your EMI before you apply."
+                  icon={Wallet}
+                >
+                  <LoansPage />
+                </AccessControlGate>
+              }
+            />
+            <Route
+              path="/insurance"
+              element={
+                <AccessControlGate
+                  eyebrow="Insurance"
+                  title="Insurance"
+                  subtitle="Health, life, motor and travel cover from insurers with strong claim settlement track records."
+                  icon={ShieldCheck}
+                >
+                  <InsurancePage />
+                </AccessControlGate>
+              }
+            />
             <Route path="/offers" element={<OffersPage />} />
             <Route path="/blog" element={<BlogPage />} />
+            <Route path="/blog/:id" element={<BlogDetailPage />} />
             <Route path="/calculators" element={<CalculatorsPage />} />
             <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
             <Route path="/terms-of-service" element={<TermsOfServicePage />} />
             <Route path="/auth" element={<AuthPage />} />
-
-            <Route path="/dashboard" element={<ProtectedRoute><DashboardPage /></ProtectedRoute>} />
+            <Route path="/dashboard" element={<Navigate to="/" replace />} />
 
             {/* Dedicated full-page Edit routes outside AdminLayout sidebar */}
             <Route
@@ -104,6 +160,8 @@ export default function App() {
                     formFields={[
                       { name: "name", label: "Account name", required: true },
                       { name: "bank", label: "Bank", required: true },
+                      { name: "imageUrl", label: "Logo Image URL", placeholder: "https://example.com/bank-logo.png" },
+                      { name: "imageAlt", label: "Logo Alt Text", placeholder: "SBI Logo" },
                       { name: "type", label: "Type", type: "select", options: ["Savings", "Current", "Salary", "Zero Balance"], required: true },
                       { name: "interest", label: "Interest rate (% p.a.)" },
                       { name: "minBalance", label: "Minimum balance" },
@@ -124,6 +182,8 @@ export default function App() {
                     updateApi={(id, data) => import("./services/api.js").then((m) => m.adminResourceApi.dematAccounts.update(id, data))}
                     formFields={[
                       { name: "name", label: "Broker name", required: true },
+                      { name: "imageUrl", label: "Logo Image URL", placeholder: "https://example.com/logo.png" },
+                      { name: "imageAlt", label: "Logo Alt Text", placeholder: "Zerodha Logo" },
                       { name: "brokerage", label: "Brokerage", required: true, placeholder: "e.g. ₹20 flat / order" },
                       { name: "amc", label: "AMC (₹/year)" },
                       { name: "opening", label: "Account opening fee", placeholder: "Free" },
@@ -145,6 +205,8 @@ export default function App() {
                     updateApi={(id, data) => import("./services/api.js").then((m) => m.adminResourceApi.loans.update(id, data))}
                     formFields={[
                       { name: "name", label: "Loan type", required: true, placeholder: "e.g. Personal Loan" },
+                      { name: "imageUrl", label: "Logo / Banner Image URL", placeholder: "https://example.com/loan.png" },
+                      { name: "imageAlt", label: "Image Alt Text", placeholder: "Personal Loan" },
                       { name: "rate", label: "Interest rate", required: true, placeholder: "e.g. 10.5% - 18%" },
                       { name: "amount", label: "Amount range", required: true, placeholder: "e.g. 50,000 - 40,00,000" },
                       { name: "tenure", label: "Tenure", required: true, placeholder: "e.g. 1 - 5 yrs" },
@@ -167,6 +229,8 @@ export default function App() {
                     formFields={[
                       { name: "name", label: "Plan name", required: true, placeholder: "e.g. Health Insurance" },
                       { name: "provider", label: "Provider", required: true },
+                      { name: "imageUrl", label: "Logo Image URL", placeholder: "https://example.com/insurance.png" },
+                      { name: "imageAlt", label: "Image Alt Text", placeholder: "HDFC ERGO Logo" },
                       { name: "premium", label: "Starting premium", required: true, placeholder: "e.g. 399 / month" },
                       { name: "coverage", label: "Coverage", placeholder: "e.g. Up to ₹1 Cr" },
                       { name: "claimRatio", label: "Claim settlement ratio", placeholder: "e.g. 98.5%" },
@@ -187,6 +251,8 @@ export default function App() {
                     formFields={[
                       { name: "title", label: "Offer title", required: true },
                       { name: "bank", label: "Bank / partner", required: true },
+                      { name: "imageUrl", label: "Logo / Banner Image URL", placeholder: "https://example.com/offer.png" },
+                      { name: "imageAlt", label: "Image Alt Text", placeholder: "Offer Banner" },
                       { name: "category", label: "Category", required: true, placeholder: "e.g. Cashback, Loans" },
                       { name: "expiry", label: "Expiry", required: true, placeholder: "e.g. 31 Aug 2026 or Ongoing" },
                       { name: "color", label: "Badge color", type: "select", options: ["blue", "emerald", "amber", "rose", "violet"] },
@@ -205,14 +271,24 @@ export default function App() {
                     fetchApi={(id) => import("./services/api.js").then((m) => m.blogApi.getOne(id))}
                     updateApi={(id, data) => import("./services/api.js").then((m) => m.adminResourceApi.blog.update(id, data))}
                     formFields={[
-                      { name: "title", label: "Title", required: true },
-                      { name: "category", label: "Category", required: true, placeholder: "e.g. Credit Cards" },
-                      { name: "excerpt", label: "Excerpt", type: "textarea", required: true },
-                      { name: "content", label: "Full content", type: "textarea" },
-                      { name: "readTime", label: "Read time", placeholder: "e.g. 6 min read" },
-                      { name: "author", label: "Author", placeholder: "Finovia Team" },
+                      { name: "title", label: "Title", required: true, placeholder: "Post Title" },
+                      { name: "category", label: "Category", required: true, placeholder: "e.g. Credit Cards, Personal Finance" },
+                      { name: "imageUrl", label: "Featured Image URL", placeholder: "https://images.unsplash.com/photo-..." },
+                      { name: "readTime", label: "Read Time", placeholder: "e.g. 5 min read" },
+                      { name: "author", label: "Author Name", placeholder: "Finovia Editorial Team" },
+                      { name: "excerpt", label: "Short Summary / Excerpt", type: "textarea", required: true, placeholder: "A brief summary..." },
+                      { name: "content", label: "Full Article Content", type: "textarea", required: true, placeholder: "Write full blog article here..." },
                     ]}
                   />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/leads/:id/edit"
+              element={
+                <ProtectedRoute adminOnly>
+                  <EditLeadPage />
                 </ProtectedRoute>
               }
             />
@@ -253,6 +329,7 @@ export default function App() {
                 path="ai"
                 element={<AdminComingSoon title="AI Recommendations" requirement="Needs a paid LLM or recommendation-engine API key to generate real personalized suggestions." />}
               />
+              <Route path="settings" element={<AdminSettingsPage />} />
             </Route>
 
             <Route path="*" element={<HomePage />} />

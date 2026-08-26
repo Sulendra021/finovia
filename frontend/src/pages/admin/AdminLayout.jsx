@@ -2,8 +2,8 @@ import React, { useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, CreditCard, Landmark, TrendingUp, Wallet, ShieldCheck,
-  Tag, Newspaper, Users, MessageCircle, Sparkles, ChevronLeft, ChevronRight, Menu, X,
-  LogOut, Sun, Moon, ArrowLeft,
+  Tag, Newspaper, Users, MessageCircle, Sparkles, ChevronLeft, ChevronRight, ChevronDown, Menu, X,
+  LogOut, Sun, Moon, ArrowLeft, KeyRound, UserCheck,
 } from "lucide-react";
 import Seo from "../../components/Seo.jsx";
 import { Logo } from "../../components/shared.jsx";
@@ -18,7 +18,7 @@ const LINKS = [
   { to: "/admin/loans", label: "Loans", icon: Wallet },
   { to: "/admin/insurance", label: "Insurance", icon: ShieldCheck },
   { to: "/admin/offers", label: "Offers & Banners", icon: Tag },
-  { to: "/admin/leads", label: "Customer Leads", icon: Newspaper },
+  { to: "/admin/leads", label: "Customer Leads", icon: UserCheck },
   { to: "/admin/blog", label: "Blog & News", icon: Newspaper },
   { to: "/admin/users", label: "Users", icon: Users },
   { to: "/admin/whatsapp", label: "WhatsApp Automation", icon: MessageCircle },
@@ -26,8 +26,9 @@ const LINKS = [
 ];
 
 export default function AdminLayout() {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const navigate = useNavigate();
   const { theme, toggleTheme } = useTheme();
   const { user, logout } = useAuth();
@@ -72,20 +73,54 @@ export default function AdminLayout() {
             </button>
 
             {user && (
-              <div className="flex items-center gap-2 pl-2 border-l border-slate-200 dark:border-slate-800">
-                <div className="w-7 h-7 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center">
-                  {user.name?.[0]?.toUpperCase() || "A"}
-                </div>
-                <span className="hidden md:inline-block text-xs font-semibold text-slate-700 dark:text-slate-200">
-                  {user.name?.split(" ")[0]}
-                </span>
+              <div className="relative pl-2 border-l border-slate-200 dark:border-slate-800">
                 <button
-                  onClick={() => { logout(); navigate("/"); }}
-                  className="fin-focus p-1.5 text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/60 rounded-lg transition-colors"
-                  title="Log out"
+                  onClick={() => setUserMenuOpen(!userMenuOpen)}
+                  className="fin-focus flex items-center gap-2 px-2 py-1 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                 >
-                  <LogOut className="w-4 h-4" />
+                  <div className="w-7 h-7 rounded-full bg-blue-600 text-white text-xs font-bold flex items-center justify-center shadow-sm">
+                    {user.name?.[0]?.toUpperCase() || "A"}
+                  </div>
+                  <span className="hidden md:inline-block text-xs font-semibold text-slate-700 dark:text-slate-200">
+                    {user.name?.split(" ")[0]}
+                  </span>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
                 </button>
+
+                {userMenuOpen && (
+                  <div
+                    className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-xl py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150"
+                    onMouseLeave={() => setUserMenuOpen(false)}
+                  >
+                    <div className="px-3.5 py-2 border-b border-slate-100 dark:border-slate-800">
+                      <p className="text-xs font-bold text-slate-900 dark:text-white truncate">{user.name}</p>
+                      <p className="text-[10px] text-slate-400 dark:text-slate-500 truncate">{user.email}</p>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        navigate("/admin/settings");
+                        setUserMenuOpen(false);
+                      }}
+                      className="fin-focus w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                    >
+                      <KeyRound className="w-4 h-4 text-blue-600 dark:text-blue-400" /> Change Password
+                    </button>
+
+                    <div className="my-1 border-t border-slate-100 dark:border-slate-800" />
+
+                    <button
+                      onClick={() => {
+                        setUserMenuOpen(false);
+                        logout();
+                        navigate("/");
+                      }}
+                      className="fin-focus w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-medium text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/50 transition-colors"
+                    >
+                      <LogOut className="w-4 h-4" /> Log out
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -155,7 +190,7 @@ export default function AdminLayout() {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 p-5 lg:p-8 max-w-6xl w-full">
+      <main className="flex-1 min-w-0 p-4 sm:p-6 lg:p-8 w-full max-w-7xl mx-auto transition-all duration-300">
         <Outlet />
       </main>
       </div>

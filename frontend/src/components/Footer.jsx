@@ -6,10 +6,10 @@ import { Logo } from "./shared.jsx";
 const FooterNav = {
   products: [
     { label: "Credit Cards", path: "/cards" },
-    { label: "Bank Accounts", path: "/bank" },
-    { label: "Demat Accounts", path: "/demat" },
-    { label: "Loans", path: "/loans" },
-    { label: "Insurance", path: "/insurance" },
+    { label: "Bank Accounts", path: "/bank", comingSoon: true },
+    { label: "Demat Accounts", path: "/demat", comingSoon: true },
+    { label: "Loans", path: "/loans", comingSoon: true },
+    { label: "Insurance", path: "/insurance", comingSoon: true },
     { label: "Offers", path: "/offers" },
     { label: "Blog", path: "/blog" },
   ],
@@ -39,12 +39,13 @@ const FooterNav = {
 export default function Footer() {
   return (
     <footer className="bg-slate-900 dark:bg-slate-950 text-slate-300 dark:text-slate-400 border-t border-slate-800 transition-colors duration-300 relative">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 md:py-14 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-8">
-        <div className="sm:col-span-2">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10 md:py-14 grid grid-cols-1 md:grid-cols-3 gap-10">
+        {/* Column 1: Brand Info & Socials */}
+        <div>
           <div className="mb-3">
             <Logo dark />
           </div>
-          <p className="text-sm text-slate-400 dark:text-slate-400 max-w-xs leading-relaxed">
+          <p className="text-sm text-slate-400 dark:text-slate-400 max-w-sm leading-relaxed">
             Smart financial choices, made simple. Compare and apply for credit cards, loans, insurance, and more - all in one place.
           </p>
           <div className="flex gap-3 mt-5">
@@ -61,57 +62,68 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Products Column */}
+        {/* Column 2: Products */}
         <div>
           <h4 className="fin-display text-white text-sm font-semibold mb-3">Products</h4>
-          <ul className="space-y-2 text-sm">
+          <ul className="grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
             {FooterNav.products.map((item, idx) => (
               <li key={idx}>
                 <Link
                   to={item.path}
-                  className="fin-focus fin-link-rtl text-slate-300 dark:text-slate-400 hover:text-white transition-colors duration-200 inline-block py-0.5"
+                  className="fin-focus fin-link-rtl text-slate-300 dark:text-slate-400 hover:text-white transition-colors duration-200 inline-flex flex-col items-start py-0.5"
                 >
-                  {item.label}
+                  {item.comingSoon && (
+                    <span className="text-[8px] font-extrabold uppercase px-1 py-0.2 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 leading-none mb-0.5 tracking-wider">
+                      SOON
+                    </span>
+                  )}
+                  <span>{item.label}</span>
                 </Link>
               </li>
             ))}
           </ul>
         </div>
 
-        {/* Company Column */}
-        <div>
-          <h4 className="fin-display text-white text-sm font-semibold mb-3">Company</h4>
-          <ul className="space-y-2 text-sm text-slate-300 dark:text-slate-400">
-            {FooterNav.company.map((item, idx) => (
-              <li key={idx}>
-                {item.isButton ? (
-                  <button className="fin-focus fin-link-rtl text-slate-300 dark:text-slate-400 hover:text-white transition-colors duration-200 text-left py-0.5">
-                    {item.label}
-                  </button>
-                ) : (
-                  <Link
-                    to={item.path}
-                    className="fin-focus fin-link-rtl text-slate-300 dark:text-slate-400 hover:text-white transition-colors duration-200 inline-block py-0.5"
-                  >
-                    {item.label}
-                  </Link>
-                )}
-              </li>
-            ))}
-          </ul>
-        </div>
+        {/* Column 3: Company & Contact */}
+        <div className="grid grid-cols-2 gap-6">
+          <div>
+            <h4 className="fin-display text-white text-sm font-semibold mb-3">Company</h4>
+            <ul className="space-y-2 text-sm text-slate-300 dark:text-slate-400">
+              {FooterNav.company.map((item, idx) => (
+                <li key={idx}>
+                  {item.isButton ? (
+                    <button className="fin-focus fin-link-rtl text-slate-300 dark:text-slate-400 hover:text-white transition-colors duration-200 text-left py-0.5">
+                      {item.label}
+                    </button>
+                  ) : (
+                    <Link
+                      to={item.path}
+                      className="fin-focus fin-link-rtl text-slate-300 dark:text-slate-400 hover:text-white transition-colors duration-200 inline-flex flex-col items-start py-0.5"
+                    >
+                      {item.comingSoon && (
+                        <span className="text-[8px] font-extrabold uppercase px-1 py-0.2 rounded bg-amber-500/20 text-amber-400 border border-amber-500/30 leading-none mb-0.5 tracking-wider">
+                          SOON
+                        </span>
+                      )}
+                      <span>{item.label}</span>
+                    </Link>
+                  )}
+                </li>
+              ))}
+            </ul>
+          </div>
 
-        {/* Get in touch Column */}
-        <div>
-          <h4 className="fin-display text-white text-sm font-semibold mb-3">Get in touch</h4>
-          <ul className="space-y-2.5 text-sm text-slate-300 dark:text-slate-400">
-            {FooterNav.contact.map(({ Icon, text }, idx) => (
-              <li key={idx} className="flex items-center gap-2">
-                <Icon className="w-4 h-4 text-blue-400 shrink-0" />
-                {text}
-              </li>
-            ))}
-          </ul>
+          <div>
+            <h4 className="fin-display text-white text-sm font-semibold mb-3">Get in touch</h4>
+            <ul className="space-y-2.5 text-sm text-slate-300 dark:text-slate-400">
+              {FooterNav.contact.map(({ Icon, text }, idx) => (
+                <li key={idx} className="flex items-center gap-2">
+                  <Icon className="w-4 h-4 text-blue-400 shrink-0" />
+                  {text}
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       </div>
 
